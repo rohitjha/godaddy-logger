@@ -24,6 +24,8 @@
 
 package com.godaddy.logging;
 
+import com.godaddy.logging.logstash.LogstashLoggerImpl;
+import com.godaddy.logging.logstash.LogstashMessageBuilderProvider;
 import com.google.common.collect.ImmutableSet;
 import com.google.common.collect.Maps;
 import com.google.common.collect.Sets;
@@ -181,6 +183,17 @@ public class LoggingConfigs {
                                   this.getHashProcessor(),
                                   this.getExceptionTranslator(),
                                   this.logger);
+    }
+
+    public LoggingConfigs useJson() {
+        return new LoggingConfigs(this.getCustomMapper(),
+                                  this.getRecursiveLevel(),
+                                  this.getMethodPrefixes(),
+                                  this.getExcludesPrefixes(),
+                                  new LogstashMessageBuilderProvider(),
+                                  this.getHashProcessor(),
+                                  this.getExceptionTranslator(),
+                                  (clazz, configs) -> new LogstashLoggerImpl(new Slf4WrapperLogger(org.slf4j.LoggerFactory.getLogger(clazz)), configs));
     }
 
     /**

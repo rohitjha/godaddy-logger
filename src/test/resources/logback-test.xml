@@ -1,0 +1,63 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<configuration debug="true">
+    <contextName>testContext</contextName>
+
+    <appender name="loggingEventCompositeJsonEncoderAppender" class="ch.qos.logback.core.ConsoleAppender">
+        <encoder class="net.logstash.logback.encoder.LoggingEventCompositeJsonEncoder">
+            <providers>
+                <timestamp/>
+                <version/>
+                <message>
+                    <fieldName>customMessage</fieldName>
+                </message>
+                <loggerName>
+                    <shortenedLoggerNameLength>20</shortenedLoggerNameLength>
+                </loggerName>
+                <threadName/>
+                <logLevel/>
+                <logLevelValue/>
+                <callerData>
+                    <fieldName>caller</fieldName>
+                    <classFieldName>class</classFieldName>
+                    <methodFieldName>method</methodFieldName>
+                    <fileFieldName>file</fileFieldName>
+                    <lineFieldName>line</lineFieldName>
+                </callerData>
+                <stackTrace>
+                    <throwableConverter class="net.logstash.logback.stacktrace.ShortenedThrowableConverter">
+                        <maxDepthPerThrowable>20</maxDepthPerThrowable>
+                        <maxLength>1000</maxLength>
+                        <shortenedClassNameLength>30</shortenedClassNameLength>
+                        <rootCauseFirst>true</rootCauseFirst>
+                        <exclude>excluded</exclude>
+                    </throwableConverter>
+                </stackTrace>
+                <context/>
+                <jsonMessage/>
+                <mdc>
+                    <includeMdcKeyName>included</includeMdcKeyName>
+                </mdc>
+                <contextMap/>
+                <globalCustomFields>
+                    <customFields>{"customName":"customValue"}</customFields>
+                </globalCustomFields>
+                <tags/>
+                <logstashMarkers/>
+                <pattern>
+                    <pattern>{"patternName":"patternValue","relativeTime":"#asLong{%relative}"}</pattern>
+                </pattern>
+                <arguments>
+                    <includeNonStructuredArguments>true</includeNonStructuredArguments>
+                    <nonStructuredArgumentsFieldPrefix>prefix</nonStructuredArgumentsFieldPrefix>
+                </arguments>
+            </providers>
+        </encoder>
+    </appender>
+    <appender name="listAppender" class="ch.qos.logback.core.read.ListAppender"/>
+    <logger name="com.godaddy.logging.logstash.LogstashTest" level="DEBUG">
+        <appender-ref ref="loggingEventCompositeJsonEncoderAppender" />
+        <appender-ref ref="listAppender" />
+    </logger>
+</configuration>
+
+
