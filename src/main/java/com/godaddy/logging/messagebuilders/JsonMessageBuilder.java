@@ -20,7 +20,7 @@
  * THE SOFTWARE.
  */
 
-package com.godaddy.logging.logstash;
+package com.godaddy.logging.messagebuilders;
 
 import com.godaddy.logging.LogContext;
 import com.godaddy.logging.LogMessage;
@@ -40,17 +40,11 @@ import java.util.Stack;
 
 import static java.util.stream.Collectors.toList;
 
-/**
- * The logstash marker formatting uses json to serialize its objects, but that doesn't give us any control over annotation
- * scopes like hash or skip, as well as the ability to do custom mapping. The serializer also uses reflection
- * and we use bytecode asm to reflect on an object. This way we send an already formatted hashmap to the
- * serializer in the form of a logstash marker. At that point iterating over the hashmap is cheap and much faster.
- */
-public class LogstashMessageBuilder extends LoggerMessageBuilder<List<Map<String, Object>>> {
+public class JsonMessageBuilder extends LoggerMessageBuilder<List<Map<String, Object>>> {
 
     private final Stack<Map<String, Object>> messageBuilderStack = new Stack<>();
 
-    public LogstashMessageBuilder(final LoggingConfigs configs) {
+    public JsonMessageBuilder(final LoggingConfigs configs) {
         super(configs);
         messageBuilderStack.push(new HashMap<>());
     }
@@ -62,12 +56,12 @@ public class LogstashMessageBuilder extends LoggerMessageBuilder<List<Map<String
 
     private RunningLogContext<List<Map<String, Object>>> buildMessage(final LogContext<List<Map<String, Object>>> previous, final Object currentObject, String key) {
         if (currentObject == null) {
-            return ContextUtils.initialToRunning(previous);
+            return JsonContextUtils.initialToRunning(previous);
         }
 
         buildMessage(currentObject, new ArrayList<>(), key, 0);
 
-        RunningLogContext<List<Map<String, Object>>> nextContext = ContextUtils.initialToRunning(previous);
+        RunningLogContext<List<Map<String, Object>>> nextContext = JsonContextUtils.initialToRunning(previous);
 
         if (nextContext == null || nextContext.getData() == null) {
             nextContext = new RunningLogContext<>(new ArrayList<>());
@@ -84,9 +78,9 @@ public class LogstashMessageBuilder extends LoggerMessageBuilder<List<Map<String
 
     @Override protected void processLogMessage(final LogMessage logMessage) {
         logMessage.keySet().stream().forEach(key -> {
-            LogstashMessageBuilder logstashMessageBuilder = new LogstashMessageBuilder(configs);
+            JsonMessageBuilder jsonMessageBuilder = new JsonMessageBuilder(configs);
 
-            List<Map<String, Object>> data = logstashMessageBuilder.buildMessage(null, logMessage.get(key)).getData();
+            List<Map<String, Object>> data = jsonMessageBuilder.buildMessage(null, logMessage.get(key)).getData();
 
             Object process = process(data);
 
@@ -125,9 +119,9 @@ public class LogstashMessageBuilder extends LoggerMessageBuilder<List<Map<String
 
         List<Object> items = Arrays.stream(collection.toArray())
                                    .flatMap(i -> {
-                                       LogstashMessageBuilder logstashMessageBuilder = new LogstashMessageBuilder(configs);
+                                       JsonMessageBuilder jsonMessageBuilder = new JsonMessageBuilder(configs);
 
-                                       List<Map<String, Object>> data = logstashMessageBuilder.buildMessage(null, i).getData();
+                                       List<Map<String, Object>> data = jsonMessageBuilder.buildMessage(null, i).getData();
 
                                        return data.stream();
                                    })
@@ -143,9 +137,9 @@ public class LogstashMessageBuilder extends LoggerMessageBuilder<List<Map<String
         List<Object> items = new ArrayList<>();
 
         for(int i = 0; i < length; i++) {
-            LogstashMessageBuilder logstashMessageBuilder = new LogstashMessageBuilder(configs);
+            JsonMessageBuilder jsonMessageBuilder = new JsonMessageBuilder(configs);
 
-            List<Map<String, Object>> data = logstashMessageBuilder.buildMessage(null, Array.get(array, i)).getData();
+            List<Map<String, Object>> data = jsonMessageBuilder.buildMessage(null, Array.get(array, i)).getData();
 
             data.forEach(y -> items.addAll(y.values()));
         }
@@ -157,7 +151,7 @@ public class LogstashMessageBuilder extends LoggerMessageBuilder<List<Map<String
         Map<String, Object> builtMap = new HashMap<>();
 
         for(Object key : map.keySet()){
-            List<Map<String, Object>> data = new LogstashMessageBuilder(configs).buildMessage(null, map.get(key)).getData();
+            List<Map<String, Object>> data = new JsonMessageBuilder(configs).buildMessage(null, map.get(key)).getData();
 
             builtMap.put(key.toString(), process(data));
         }

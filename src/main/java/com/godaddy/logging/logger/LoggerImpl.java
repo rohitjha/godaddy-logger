@@ -20,35 +20,37 @@
  * THE SOFTWARE.
  */
 
-package com.godaddy.logging.logstash;
+package com.godaddy.logging.logger;
 
 import com.godaddy.logging.InitialLogContext;
 import com.godaddy.logging.LogContext;
 import com.godaddy.logging.LogMessage;
 import com.godaddy.logging.Logger;
-import com.godaddy.logging.LoggerImpl;
 import com.godaddy.logging.LoggingConfigs;
+import com.godaddy.logging.logger.AnnotatingLogger;
 import org.slf4j.Marker;
+import org.slf4j.MarkerFactory;
 import org.slf4j.helpers.FormattingTuple;
 import org.slf4j.helpers.MessageFormatter;
 
-public class LogstashLoggerImpl extends LoggerImpl {
-    private final Logger root;
-    private final LoggingConfigs configs;
+public class LoggerImpl implements Logger {
 
-    public LogstashLoggerImpl(Logger root, LoggingConfigs configs) {
-        super(root, configs);
+    protected Logger root;
+
+    protected LoggingConfigs configs;
+
+    protected final Marker successMarker = MarkerFactory.getMarker("SUCCESS");
+
+    protected final Marker dashboardMarker = MarkerFactory.getMarker("DASHBOARD");
+
+    public LoggerImpl(Logger root, LoggingConfigs configs) {
         this.root = root;
         this.configs = configs;
     }
 
     @Override
     public Logger with(Object obj) {
-        return new LogstashAnnotatingLogger(root, this, obj, configs);
-    }
-
-    protected LogContext getMessage(LogContext<?> runningLogContext) {
-        return runningLogContext;
+        return new AnnotatingLogger(root, this, obj, configs);
     }
 
     @Override
@@ -57,310 +59,345 @@ public class LogstashLoggerImpl extends LoggerImpl {
 
         logMessage.put(key, value);
 
-        return new LogstashAnnotatingLogger(root, this, logMessage, configs);
+        return new AnnotatingLogger(root, this, logMessage, configs);
+    }
+
+    protected LogContext getMessage(LogContext<?> runningLogContext) {
+        return runningLogContext;
     }
 
     private LogContext getMessage(String msg) {
         return getMessage(new InitialLogContext(msg));
     }
 
-    private Marker formatMessage(LogContext msg) {
-        return (Marker) configs.getMessageBuilderFunction().formatPayload(msg);
+    private String formatMessage(LogContext msg) {
+        Object formattedPayload = configs.getMessageBuilderFunction().formatPayload(msg);
+
+        return formattedPayload == null ? null : formattedPayload.toString();
     }
 
-    @Override public void info(final String msg) {
-        root.info(formatMessage(getMessage(msg)), msg);
+    @Override
+    public void info(String msg) {
+        root.info(formatMessage(getMessage(msg)));
+    }
+
+    @Override
+    public String getName() {
+        return root.getName();
+    }
+
+    @Override
+    public boolean isTraceEnabled() {
+        return root.isTraceEnabled();
     }
 
     @Override
     public void trace(String msg) {
-        root.trace(formatMessage(getMessage(msg)), msg);
+        root.trace(formatMessage(getMessage(msg)));
     }
 
     @Override
     public void trace(String format, Object arg) {
-        root.trace(formatMessage(getMessage(format)), format, arg);
+        root.trace(formatMessage(getMessage(format)), arg);
     }
 
     @Override
     public void trace(String format, Object arg1, Object arg2) {
-        root.trace(formatMessage(getMessage(format)), format, arg1, arg2);
+        root.trace(formatMessage(getMessage(format)), arg1, arg2);
     }
 
     @Override
     public void trace(String format, Object... arguments) {
-        root.trace(formatMessage(getMessage(format)), format, arguments);
+        root.trace(formatMessage(getMessage(format)), arguments);
     }
 
     @Override
     public void trace(String msg, Throwable t) {
-        root.trace(formatMessage(getMessage(msg)), msg, t);
+        root.trace(formatMessage(getMessage(msg)), t);
+    }
+
+    @Override public boolean isTraceEnabled(final Marker marker) {
+        return root.isTraceEnabled();
     }
 
     @Override
     public void trace(Marker marker, String msg) {
-        marker.add(formatMessage(getMessage(msg)));
-        root.trace(marker, msg);
+        root.trace(marker, formatMessage(getMessage(msg)));
     }
 
     @Override
     public void trace(Marker marker, String format, Object arg) {
-        marker.add(formatMessage(getMessage(format)));
-        root.trace(marker, format, arg);
+        root.trace(marker, formatMessage(getMessage(format)), arg);
     }
 
     @Override
     public void trace(Marker marker, String format, Object arg1, Object arg2) {
-        marker.add(formatMessage(getMessage(format)));
-        root.trace(marker, format, arg1, arg2);
+        root.trace(marker, formatMessage(getMessage(format)), arg1, arg2);
     }
 
     @Override
     public void trace(Marker marker, String format, Object... argArray) {
-        marker.add(formatMessage(getMessage(format)));
-        root.trace(marker, format, argArray);
+        root.trace(marker, formatMessage(getMessage(format)), argArray);
     }
 
     @Override
     public void trace(Marker marker, String msg, Throwable t) {
-        marker.add(formatMessage(getMessage(msg)));
-        root.trace(marker, msg, t);
+        root.trace(marker, formatMessage(getMessage(msg)), t);
+    }
+
+    @Override
+    public boolean isDebugEnabled() {
+        return root.isDebugEnabled();
     }
 
     @Override
     public void debug(String msg) {
-        root.debug(formatMessage(getMessage(msg)), msg);
+        root.debug(formatMessage(getMessage(msg)));
     }
 
     @Override
     public void debug(String format, Object arg) {
-        root.debug(formatMessage(getMessage(format)), format, arg);
+        root.debug(formatMessage(getMessage(format)), arg);
     }
 
     @Override
     public void debug(String format, Object arg1, Object arg2) {
-        root.debug(formatMessage(getMessage(format)), format, arg1, arg2);
+        root.debug(formatMessage(getMessage(format)), arg1, arg2);
     }
 
     @Override
     public void debug(String format, Object... arguments) {
-        root.debug(formatMessage(getMessage(format)), format, arguments);
+        root.debug(formatMessage(getMessage(format)), arguments);
     }
 
     @Override
     public void debug(String msg, Throwable t) {
-        root.debug(formatMessage(getMessage(msg)), msg, t);
+        root.debug(formatMessage(getMessage(msg)), t);
+    }
+
+    @Override
+    public boolean isDebugEnabled(Marker marker) {
+        return root.isDebugEnabled(marker);
     }
 
     @Override
     public void debug(Marker marker, String msg) {
-        marker.add(formatMessage(getMessage(msg)));
-        root.debug(marker, msg);
+        root.debug(marker, formatMessage(getMessage(msg)));
     }
 
     @Override
     public void debug(Marker marker, String format, Object arg) {
-        marker.add(formatMessage(getMessage(format)));
-        root.debug(marker, format, arg);
+        root.debug(marker, formatMessage(getMessage(format)), arg);
     }
 
     @Override
     public void debug(Marker marker, String format, Object arg1, Object arg2) {
-        marker.add(formatMessage(getMessage(format)));
-        root.debug(marker, format, arg1, arg2);
+        root.debug(marker, formatMessage(getMessage(format)), arg1, arg2);
     }
 
     @Override
     public void debug(Marker marker, String format, Object... arguments) {
-        marker.add(formatMessage(getMessage(format)));
-        root.debug(marker, format, arguments);
+        root.debug(marker, formatMessage(getMessage(format)), arguments);
     }
 
     @Override
     public void debug(Marker marker, String msg, Throwable t) {
-        marker.add(formatMessage(getMessage(msg)));
-        root.debug(marker, msg, t);
+        root.debug(marker, formatMessage(getMessage(msg)), t);
+    }
+
+    @Override
+    public boolean isInfoEnabled() {
+        return root.isInfoEnabled();
     }
 
     @Override
     public void info(String format, Object arg) {
-        root.info(formatMessage(getMessage(format)), format, arg);
+        root.info(formatMessage(getMessage(format)), arg);
     }
 
     @Override
     public void info(String format, Object arg1, Object arg2) {
-        root.info(formatMessage(getMessage(format)), format, arg1, arg2);
+        root.info(formatMessage(getMessage(format)), arg1, arg2);
     }
 
     @Override
     public void info(String format, Object... arguments) {
-        root.info(formatMessage(getMessage(format)), format, arguments);
+
+        root.info(formatMessage(getMessage(format)), arguments);
     }
 
     @Override
     public void info(String msg, Throwable t) {
-        root.info(formatMessage(getMessage(msg)), msg, t);
+        root.info(formatMessage(getMessage(msg)), t);
+    }
+
+    @Override
+    public boolean isInfoEnabled(Marker marker) {
+        return root.isInfoEnabled(marker);
     }
 
     @Override
     public void info(Marker marker, String msg) {
-        marker.add(formatMessage(getMessage(msg)));
-        root.info(marker, msg);
+        root.info(marker, formatMessage(getMessage(msg)));
     }
 
     @Override
     public void info(Marker marker, String format, Object arg) {
-        marker.add(formatMessage(getMessage(format)));
-        root.info(marker, format, arg);
+        root.info(marker, formatMessage(getMessage(format)), arg);
     }
 
     @Override
     public void info(Marker marker, String format, Object arg1, Object arg2) {
-        marker.add(formatMessage(getMessage(format)));
-        root.info(marker, format, arg1, arg2);
+        root.info(marker, formatMessage(getMessage(format)), arg1, arg2);
     }
 
     @Override
     public void info(Marker marker, String format, Object... arguments) {
-        marker.add(formatMessage(getMessage(format)));
-        root.info(marker, format, arguments);
+        root.info(marker, formatMessage(getMessage(format)), arguments);
     }
 
     @Override
     public void info(Marker marker, String msg, Throwable t) {
-        marker.add(formatMessage(getMessage(msg)));
-        root.info(marker, msg, t);
+        root.info(marker, formatMessage(getMessage(msg)), t);
+    }
+
+    @Override
+    public boolean isWarnEnabled() {
+        return root.isWarnEnabled();
     }
 
     @Override
     public void warn(String msg) {
-        root.warn(formatMessage(getMessage(msg)), msg);
+        root.warn(formatMessage(getMessage(msg)));
     }
 
     @Override
     public void warn(String format, Object arg) {
-        root.warn(formatMessage(getMessage(format)), format, arg);
+        root.warn(formatMessage(getMessage(format)), arg);
     }
 
     @Override
     public void warn(String format, Object... arguments) {
-        root.warn(formatMessage(getMessage(format)), format, arguments);
+        root.warn(formatMessage(getMessage(format)), arguments);
     }
 
     @Override
     public void warn(String format, Object arg1, Object arg2) {
-        root.warn(formatMessage(getMessage(format)), format, arg1, arg2);
+        root.warn(formatMessage(getMessage(format)), arg1, arg2);
     }
 
     @Override
     public void warn(String msg, Throwable t) {
-        root.warn(formatMessage(getMessage(msg)), msg, t);
+        root.warn(formatMessage(getMessage(msg)), t);
+    }
+
+    @Override
+    public boolean isWarnEnabled(Marker marker) {
+        return root.isWarnEnabled(marker);
     }
 
     @Override
     public void warn(Marker marker, String msg) {
-        marker.add(formatMessage(getMessage(msg)));
-        root.warn(marker, msg);
+        root.warn(marker, formatMessage(getMessage(msg)));
     }
 
     @Override
     public void warn(Marker marker, String format, Object arg) {
-        marker.add(formatMessage(getMessage(format)));
-        root.warn(marker, format, arg);
+        root.warn(marker, formatMessage(getMessage(format)), arg);
     }
 
     @Override
     public void warn(Marker marker, String format, Object arg1, Object arg2) {
-        marker.add(formatMessage(getMessage(format)));
-        root.warn(marker, format, arg1, arg2);
+        root.warn(marker, formatMessage(getMessage(format)), arg1, arg2);
     }
 
     @Override
     public void warn(Marker marker, String format, Object... arguments) {
-        marker.add(formatMessage(getMessage(format)));
-        root.warn(marker, format, arguments);
+        root.warn(marker, formatMessage(getMessage(format)), arguments);
     }
 
     @Override
     public void warn(Marker marker, String msg, Throwable t) {
-        marker.add(formatMessage(getMessage(msg)));
-        root.warn(marker, msg, t);
+        root.warn(marker, formatMessage(getMessage(msg)), t);
+    }
+
+    @Override
+    public boolean isErrorEnabled() {
+        return root.isErrorEnabled();
     }
 
     @Override
     public void error(String msg) {
-        root.error(formatMessage(getMessage(msg)), msg);
+        root.error(formatMessage(getMessage(msg)));
     }
 
     @Override
     public void error(String format, Object arg) {
-        root.error(formatMessage(getMessage(format)), format, arg);
+        root.error(formatMessage(getMessage(format)), arg);
     }
 
     @Override
     public void error(String format, Object arg1, Object arg2) {
-        root.error(formatMessage(getMessage(format)), format, arg1, arg2);
+        root.error(formatMessage(getMessage(format)), arg1, arg2);
     }
 
     @Override
     public void error(String format, Object... arguments) {
-        root.error(formatMessage(getMessage(format)), format, arguments);
+        root.error(formatMessage(getMessage(format)), arguments);
     }
 
     @Override
     public void error(String msg, Throwable t) {
-        root.error(formatMessage(getMessage(msg)), msg, t);
+        root.error(formatMessage(getMessage(msg)), t);
+    }
+
+    @Override
+    public boolean isErrorEnabled(Marker marker) {
+        return root.isErrorEnabled(marker);
     }
 
     @Override
     public void error(Marker marker, String msg) {
-        marker.add(formatMessage(getMessage(msg)));
-        root.error(marker, msg);
+        root.error(marker, formatMessage(getMessage(msg)));
     }
 
     @Override
     public void error(Marker marker, String format, Object arg) {
-        marker.add(formatMessage(getMessage(format)));
-        root.error(marker, format, arg);
+        root.error(marker, formatMessage(getMessage(format)), arg);
     }
 
     @Override
     public void error(Marker marker, String format, Object arg1, Object arg2) {
-        marker.add(formatMessage(getMessage(format)));
-        root.error(marker, format, arg1, arg2);
+        root.error(marker, formatMessage(getMessage(format)), arg1, arg2);
     }
 
     @Override
     public void error(Marker marker, String format, Object... arguments) {
-        marker.add(formatMessage(getMessage(format)));
-        root.error(marker, format, arguments);
+        root.error(marker, formatMessage(getMessage(format)), arguments);
     }
 
     @Override
     public void error(Marker marker, String msg, Throwable t) {
-        marker.add(formatMessage(getMessage(msg)));
-        root.error(marker, msg, t);
+        root.error(marker, formatMessage(getMessage(msg)), t);
     }
 
     @Override
     public void error(Throwable t, String format, Object... args) {
         FormattingTuple ft = MessageFormatter.arrayFormat(format, args);
-        root.error(formatMessage(getMessage(ft.getMessage())), ft.getMessage(), t);
+        root.error(formatMessage(getMessage(ft.getMessage())), t);
     }
 
     @Override
     public void warn(final Throwable t, final String format, final Object... args) {
         FormattingTuple ft = MessageFormatter.arrayFormat(format, args);
-        root.warn(formatMessage(getMessage(ft.getMessage())), ft.getMessage(), t);
+        root.warn(formatMessage(getMessage(ft.getMessage())), t);
     }
 
     @Override public void success(final String format, final Object... args) {
-        successMarker.add(formatMessage(getMessage(format)));
         info(successMarker, format, args);
     }
 
     @Override public void dashboard(final String format, final Object... args) {
-        successMarker.add(formatMessage(getMessage(format)));
         info(dashboardMarker, format, args);
     }
 }

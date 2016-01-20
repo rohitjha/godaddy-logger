@@ -20,29 +20,30 @@
  * THE SOFTWARE.
  */
 
-package com.godaddy.logging;
+package com.godaddy.logging.messagebuilders;
 
-public class AnnotatingLogger extends LoggerImpl {
+import com.godaddy.logging.InitialLogContext;
+import com.godaddy.logging.LogContext;
+import com.godaddy.logging.RunningLogContext;
+import com.google.common.collect.Lists;
 
-    private final Logger root;
-    private final LoggerImpl parent;
-    private Object obj;
-    private final LoggingConfigs configs;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
 
+public class JsonContextUtils {
+    public static RunningLogContext<List<Map<String, Object>>> initialToRunning(final LogContext<List<Map<String, Object>>> previous) {
+        if (previous instanceof InitialLogContext) {
+            final String logMessage = ((InitialLogContext) previous).getLogMessage();
 
-    public AnnotatingLogger(Logger root, LoggerImpl parent, Object obj, final LoggingConfigs configs) {
-        super(root, configs);
-        this.root = root;
-        this.parent = parent;
+            Map<String, Object> initialMap = new HashMap<>();
+            initialMap.put("message", logMessage);
 
-        this.obj = obj;
-        this.configs = configs;
-    }
+            return new RunningLogContext<>(Lists.newArrayList(initialMap));
 
-    @Override
-    public LogContext<?> getMessage(LogContext<?> previous) {
-        MessageBuilder messageBuilder = configs.getMessageBuilderFunction().getBuilder(configs);
-
-        return parent.getMessage(messageBuilder.buildMessage(previous, obj));
+        }
+        else {
+            return ((RunningLogContext<List<Map<String, Object>>>) previous);
+        }
     }
 }

@@ -20,30 +20,34 @@
  * THE SOFTWARE.
  */
 
-package com.godaddy.logging.logstash;
+package com.godaddy.logging.logger;
 
-import com.godaddy.logging.InitialLogContext;
 import com.godaddy.logging.LogContext;
-import com.godaddy.logging.RunningLogContext;
-import com.google.common.collect.Lists;
+import com.godaddy.logging.Logger;
+import com.godaddy.logging.LoggingConfigs;
+import com.godaddy.logging.MessageBuilder;
 
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
+public class AnnotatingLogger extends LoggerImpl {
 
-class ContextUtils {
-    public static RunningLogContext<List<Map<String, Object>>> initialToRunning(final LogContext<List<Map<String, Object>>> previous) {
-        if (previous instanceof InitialLogContext) {
-            final String logMessage = ((InitialLogContext) previous).getLogMessage();
+    private final Logger root;
+    private final LoggerImpl parent;
+    private Object obj;
+    private final LoggingConfigs configs;
 
-            Map<String, Object> initialMap = new HashMap<>();
-            initialMap.put("message", logMessage);
 
-            return new RunningLogContext<>(Lists.newArrayList(initialMap));
+    public AnnotatingLogger(Logger root, LoggerImpl parent, Object obj, final LoggingConfigs configs) {
+        super(root, configs);
+        this.root = root;
+        this.parent = parent;
 
-        }
-        else {
-            return ((RunningLogContext<List<Map<String, Object>>>) previous);
-        }
+        this.obj = obj;
+        this.configs = configs;
+    }
+
+    @Override
+    public LogContext<?> getMessage(LogContext<?> previous) {
+        MessageBuilder messageBuilder = configs.getMessageBuilderFunction().getBuilder(configs);
+
+        return parent.getMessage(messageBuilder.buildMessage(previous, obj));
     }
 }

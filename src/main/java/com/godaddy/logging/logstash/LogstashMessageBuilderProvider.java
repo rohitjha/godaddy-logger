@@ -27,6 +27,8 @@ import com.godaddy.logging.LoggingConfigs;
 import com.godaddy.logging.MessageBuilder;
 import com.godaddy.logging.MessageBuilderProvider;
 import com.godaddy.logging.RunningLogContext;
+import com.godaddy.logging.messagebuilders.JsonContextUtils;
+import com.godaddy.logging.messagebuilders.JsonMessageBuilder;
 import org.slf4j.Marker;
 
 import java.util.ArrayList;
@@ -48,7 +50,7 @@ class FoldedLogData {
 public class LogstashMessageBuilderProvider implements MessageBuilderProvider<List<Map<String, Object>>> {
 
     @Override public MessageBuilder<List<Map<String, Object>>> getBuilder(final LoggingConfigs configs) {
-        return new LogstashMessageBuilder(configs);
+        return new JsonMessageBuilder(configs);
     }
 
     @Override public Marker formatPayload(final LogContext<List<Map<String, Object>>> context) {
@@ -63,7 +65,7 @@ public class LogstashMessageBuilderProvider implements MessageBuilderProvider<Li
          * Any keys that dont' have any text will get put into a 'context' array flattened.
          */
 
-        final RunningLogContext<List<Map<String, Object>>> runningLogContext = ContextUtils.initialToRunning(context);
+        final RunningLogContext<List<Map<String, Object>>> runningLogContext = JsonContextUtils.initialToRunning(context);
 
         FoldedLogData data = buildLogData(runningLogContext);
 

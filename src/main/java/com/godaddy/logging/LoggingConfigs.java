@@ -24,8 +24,10 @@
 
 package com.godaddy.logging;
 
-import com.godaddy.logging.logstash.LogstashLoggerImpl;
+import com.godaddy.logging.logger.LoggerImpl;
+import com.godaddy.logging.logger.MarkerAppendingLogger;
 import com.godaddy.logging.logstash.LogstashMessageBuilderProvider;
+import com.godaddy.logging.messagebuilders.StringMessageBuilder;
 import com.google.common.collect.ImmutableSet;
 import com.google.common.collect.Maps;
 import com.google.common.collect.Sets;
@@ -193,7 +195,7 @@ public class LoggingConfigs {
                                   new LogstashMessageBuilderProvider(),
                                   this.getHashProcessor(),
                                   this.getExceptionTranslator(),
-                                  (clazz, configs) -> new LogstashLoggerImpl(new Slf4WrapperLogger(org.slf4j.LoggerFactory.getLogger(clazz)), configs));
+                                  (clazz, configs) -> new MarkerAppendingLogger(new Slf4WrapperLogger(org.slf4j.LoggerFactory.getLogger(clazz)), configs));
     }
 
     /**
