@@ -137,6 +137,11 @@ When the above code block is run, the following will be output in the logs as ex
 15:50:44.667 [main] INFO  com.godaddy.logging.LoggerTest - Annotation Logging; creditCardNumber="5d4e923fe014cb34f4c7ed17b82d6c58"; notAnnotated="NOT ANNOTATED"; notAnnotatedMethod="Not Annotated"
 ```
 
+##Structured JSON Logging with Logstash
+There is support for JSON structure logging with Logstash. To use JSON structured logging your logging configs need to be configured:
+'LoggingConfigs configs = LoggingConfigs.getCurrent().useJson();`
+The with functionality now appends a LogstashMarker to the logstatement instead of just appending a String at the end of your log message. You need to setup Logstash or some other appender to handle these markers. You can check out LogstashTest.java and logstash-test.xml to see an example of how this is done.
+
 
 
 ##Logger Bindings
