@@ -139,7 +139,7 @@ When the above code block is run, the following will be output in the logs as ex
 
 ##Structured JSON Logging with Logstash
 There is support for JSON structure logging with Logstash. To use JSON structured logging your logging configs need to be configured:
-'LoggingConfigs configs = LoggingConfigs.getCurrent().useJson();`
+`LoggingConfigs configs = LoggingConfigs.getCurrent().useJson();`
 The with functionality now appends a LogstashMarker to the logstatement instead of just appending a String at the end of your log message. You need to setup Logstash or some other appender to handle these markers. You can check out LogstashTest.java and logstash-test.xml to see an example of how this is done.
 
 
