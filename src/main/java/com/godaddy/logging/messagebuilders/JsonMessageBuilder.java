@@ -28,6 +28,7 @@ import com.godaddy.logging.LoggerMessageBuilder;
 import com.godaddy.logging.LoggingConfigs;
 import com.godaddy.logging.RunningLogContext;
 import com.google.common.base.Strings;
+import com.google.common.collect.Lists;
 
 import java.lang.reflect.Array;
 import java.util.ArrayList;
@@ -80,11 +81,17 @@ public class JsonMessageBuilder extends LoggerMessageBuilder<List<Map<String, Ob
         logMessage.keySet().stream().forEach(key -> {
             JsonMessageBuilder jsonMessageBuilder = new JsonMessageBuilder(configs);
 
-            List<Map<String, Object>> data = jsonMessageBuilder.buildMessage(null, logMessage.get(key)).getData();
+            if(logMessage.get(key) == null) {
+                messageBuilderStack.peek().put(key, null);
+            }
+            else {
 
-            Object process = process(data);
+                List<Map<String, Object>> data = jsonMessageBuilder.buildMessage(null, logMessage.get(key)).getData();
 
-            messageBuilderStack.peek().put(key, process);
+                Object process = process(data);
+
+                messageBuilderStack.peek().put(key, process);
+            }
         });
     }
 
@@ -92,6 +99,7 @@ public class JsonMessageBuilder extends LoggerMessageBuilder<List<Map<String, Ob
      * Unbox the map into more useful forms. For example, if the size of the list is only 1 lets unbox the map itself
      *
      * If the list is maps of all size 1 with anonymous keys, thats a list and we should flatten it
+     *
      * @param data
      * @return
      */
@@ -101,7 +109,7 @@ public class JsonMessageBuilder extends LoggerMessageBuilder<List<Map<String, Ob
                                        .flatMap(i -> i.values().stream())
                                        .collect(toList());
 
-            if(collect.size() == 1){
+            if (collect.size() == 1) {
                 return collect.get(0);
             }
 
@@ -116,6 +124,23 @@ public class JsonMessageBuilder extends LoggerMessageBuilder<List<Map<String, Ob
     }
 
     @Override protected void processCollection(String currentField, Collection collection) {
+        filterAndProcessCollection(currentField, collection);
+    }
+
+    @Override protected void processArray(final String currentField, final Object array) {
+        int length = Array.getLength(array);
+
+        List<Object> objects = Lists.newArrayList();
+
+        for (int i = 0; i < length; i++) {
+            objects.add(Array.get(array, i));
+        }
+
+        filterAndProcessCollection(currentField, objects);
+    }
+
+    private void filterAndProcessCollection(String currentField, Collection collection) {
+        collection = configs.getCollectionFilter().apply(collection);
 
         List<Object> items = Arrays.stream(collection.toArray())
                                    .flatMap(i -> {
@@ -131,26 +156,12 @@ public class JsonMessageBuilder extends LoggerMessageBuilder<List<Map<String, Ob
         messageBuilderStack.peek().put(currentField, items);
     }
 
-    @Override protected void processArray(final String currentField, final Object array) {
-        int length = Array.getLength(array);
-
-        List<Object> items = new ArrayList<>();
-
-        for(int i = 0; i < length; i++) {
-            JsonMessageBuilder jsonMessageBuilder = new JsonMessageBuilder(configs);
-
-            List<Map<String, Object>> data = jsonMessageBuilder.buildMessage(null, Array.get(array, i)).getData();
-
-            data.forEach(y -> items.addAll(y.values()));
-        }
-
-        messageBuilderStack.peek().put(currentField, items);
-    }
-
     @Override protected void processMap(String currentField, Map map) {
         Map<String, Object> builtMap = new HashMap<>();
 
-        for(Object key : map.keySet()){
+        Collection keySet = configs.getCollectionFilter().apply(map.keySet());
+
+        for (Object key : keySet) {
             List<Map<String, Object>> data = new JsonMessageBuilder(configs).buildMessage(null, map.get(key)).getData();
 
             builtMap.put(key.toString(), process(data));

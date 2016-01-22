@@ -27,7 +27,6 @@ import com.godaddy.logging.LogContext;
 import com.godaddy.logging.LogMessage;
 import com.godaddy.logging.Logger;
 import com.godaddy.logging.LoggingConfigs;
-import com.godaddy.logging.logger.AnnotatingLogger;
 import org.slf4j.Marker;
 import org.slf4j.MarkerFactory;
 import org.slf4j.helpers.FormattingTuple;

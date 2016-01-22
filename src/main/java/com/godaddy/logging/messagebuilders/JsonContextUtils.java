@@ -22,6 +22,7 @@
 
 package com.godaddy.logging.messagebuilders;
 
+import com.godaddy.logging.CommonKeys;
 import com.godaddy.logging.InitialLogContext;
 import com.godaddy.logging.LogContext;
 import com.godaddy.logging.RunningLogContext;
@@ -37,7 +38,7 @@ public class JsonContextUtils {
             final String logMessage = ((InitialLogContext) previous).getLogMessage();
 
             Map<String, Object> initialMap = new HashMap<>();
-            initialMap.put("message", logMessage);
+            initialMap.put(CommonKeys.LOG_MESSAGE_KEY, logMessage);
 
             return new RunningLogContext<>(Lists.newArrayList(initialMap));
 

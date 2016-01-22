@@ -1,5 +1,4 @@
 /**
- *
  * Copyright (c) 2015 GoDaddy
  *
  * Permission is hereby granted, free of charge, to any person obtaining a copy
@@ -19,22 +18,12 @@
  * LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
  * OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
  * THE SOFTWARE.
- *
  */
 
 package com.godaddy.logging;
 
-public interface MessageBuilderProvider<T> {
-    MessageBuilder<T> getBuilder(LoggingConfigs configs);
+public class CommonKeys {
+    public static final String LOG_MESSAGE_KEY = "_message";
 
-    /**
-     * Return any formatted payload of the log context. The owning logger should know what to do with this type.
-     *
-     * For example, if you want to format your message as a string return a string and the logger should log that message.
-     *
-     * If you want to format your context as a Marker then fold the context into a marker and return that.
-     * @param runningLogContext
-     * @return
-     */
-    Object formatPayload(LogContext<T> runningLogContext);
+    public static final String UNNAMED_VALUES_KEY = "_unnamed_values";
 }

@@ -28,6 +28,7 @@ import ch.qos.logback.core.read.ListAppender;
 import com.fasterxml.jackson.core.JsonFactory;
 import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.MappingJsonFactory;
+import com.godaddy.logging.CommonKeys;
 import com.godaddy.logging.Logger;
 import com.godaddy.logging.LoggerFactory;
 import com.godaddy.logging.LoggingConfigs;
@@ -75,7 +76,7 @@ public class LogstashTest {
 
         assertEquals(output.get("horse"), "NEIGH");
         assertEquals(((LinkedHashMap) getOutput("loggingEventCompositeJsonEncoderAppender").get("inner")).get("car"), "VROOM");
-        assertEquals(output.get("message"), "YO");
+        assertEquals(output.get(CommonKeys.LOG_MESSAGE_KEY), "YO");
         assertEquals(output.get("level"), "INFO");
     }
 

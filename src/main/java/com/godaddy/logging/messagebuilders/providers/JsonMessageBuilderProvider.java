@@ -20,8 +20,9 @@
  * THE SOFTWARE.
  */
 
-package com.godaddy.logging.logstash;
+package com.godaddy.logging.messagebuilders.providers;
 
+import com.godaddy.logging.CommonKeys;
 import com.godaddy.logging.LogContext;
 import com.godaddy.logging.LoggingConfigs;
 import com.godaddy.logging.MessageBuilder;
@@ -29,7 +30,6 @@ import com.godaddy.logging.MessageBuilderProvider;
 import com.godaddy.logging.RunningLogContext;
 import com.godaddy.logging.messagebuilders.JsonContextUtils;
 import com.godaddy.logging.messagebuilders.JsonMessageBuilder;
-import org.slf4j.Marker;
 
 import java.util.ArrayList;
 import java.util.HashMap;
@@ -38,7 +38,6 @@ import java.util.Map;
 import java.util.stream.Collectors;
 
 import static java.util.stream.Collectors.toList;
-import static net.logstash.logback.marker.Markers.appendEntries;
 
 class FoldedLogData {
     List<Map<String, Object>> unnamed = new ArrayList<>();
@@ -46,15 +45,12 @@ class FoldedLogData {
     List<Map<String, Object>> named = new ArrayList<>();
 }
 
-
-public class LogstashMessageBuilderProvider implements MessageBuilderProvider<List<Map<String, Object>>> {
-
+public abstract class JsonMessageBuilderProvider implements MessageBuilderProvider<List<Map<String, Object>>> {
     @Override public MessageBuilder<List<Map<String, Object>>> getBuilder(final LoggingConfigs configs) {
         return new JsonMessageBuilder(configs);
     }
 
-    @Override public Marker formatPayload(final LogContext<List<Map<String, Object>>> context) {
-
+    protected Map<String, Object> getContextMap(final LogContext<List<Map<String, Object>>> context) {
         /**
          * Take all the log contexts that were aggregated by the message builder
          * and format them into a hash map.
@@ -74,10 +70,10 @@ public class LogstashMessageBuilderProvider implements MessageBuilderProvider<Li
         data.named.forEach(json::putAll);
 
         if(data.unnamed.size() > 0) {
-            json.put("context", data.unnamed.stream().flatMap(i -> i.values().stream()).collect(toList()));
+            json.put(CommonKeys.UNNAMED_VALUES_KEY, data.unnamed.stream().flatMap(i -> i.values().stream()).collect(toList()));
         }
 
-        return appendEntries(json);
+        return json;
     }
 
     private FoldedLogData buildLogData(final RunningLogContext<List<Map<String, Object>>> runningLogContext) {
@@ -88,51 +84,63 @@ public class LogstashMessageBuilderProvider implements MessageBuilderProvider<Li
                                                               .flatMap(i -> i.keySet().stream())
                                                               .collect(Collectors.groupingBy(i -> i));
 
-
-        Map<String, Integer> keyCollisionIdentifer = new HashMap<>();
+        Map<String, Integer> keyCollisionIdentifier = new HashMap<>();
 
         runningLogContext.getData()
                          .stream()
                          .forEach(withObject -> {
-                             HashMap<String, Object> unnamed = new HashMap<>();
 
-                             withObject.keySet()
-                                       .stream()
-                                       .filter(key -> key.equals(""))
-                                       .forEach(key -> unnamed.put(key, withObject.get(key)));
+                             appendUnnamedContext(withObject, data);
 
-                             HashMap<String, Object> named = new HashMap<>();
-
-                             withObject.keySet()
-                                       .stream()
-                                       .filter(key -> !key.equals(""))
-                                       .forEach(key -> {
-                                           String name = key;
-                                           if(keyNames.get(key).size() > 1){
-                                               if(!keyCollisionIdentifer.containsKey(key)){
-                                                   keyCollisionIdentifer.put(key, 1);
-                                               }
-
-                                               Integer identity = keyCollisionIdentifer.get(key);
-
-                                               name += identity;
-
-                                               keyCollisionIdentifer.put(key, ++identity);
-                                           }
-
-                                           named.put(name, withObject.get(key));
-                                       });
-
-
-                             if(named.size() > 0) {
-                                 data.named.add(named);
-                             }
-
-                             if(unnamed.size() > 0) {
-                                 data.unnamed.add(unnamed);
-                             }
+                             appendNamedContext(withObject, data, keyNames, keyCollisionIdentifier);
                          });
 
         return data;
     }
+
+    private void appendUnnamedContext(Map<String, Object> logContext, FoldedLogData data) {
+        HashMap<String, Object> unnamed = new HashMap<>();
+
+        logContext.keySet()
+                  .stream()
+                  .filter(key -> key.equals(""))
+                  .forEach(key -> unnamed.put(key, logContext.get(key)));
+
+        if(unnamed.size() > 0) {
+            data.unnamed.add(unnamed);
+        }
+    }
+
+    private void appendNamedContext(Map<String, Object> logContext, FoldedLogData data, Map<String, List<String>> keyNames, Map<String, Integer> keyCollisionIdentifier) {
+        HashMap<String, Object> named = new HashMap<>();
+
+        logContext.keySet()
+                  .stream()
+                  .filter(key -> !key.equals(""))
+                  .forEach(key -> {
+                      String name = key;
+                      /**
+                       * _unnamed_values is a reserved key for values with no key.
+                       * If a named key with the value of _unnamed_values is received, it will be appended to.
+                       */
+                      if (keyNames.get(key).size() > 1 || key.equals(CommonKeys.UNNAMED_VALUES_KEY)) {
+                          if (!keyCollisionIdentifier.containsKey(key)) {
+                              keyCollisionIdentifier.put(key, 1);
+                          }
+
+                          Integer identity = keyCollisionIdentifier.get(key);
+
+                          name = identity == 1 && !key.equals(CommonKeys.UNNAMED_VALUES_KEY) ? name : (name += identity);
+
+                          keyCollisionIdentifier.put(key, ++identity);
+                      }
+
+                      named.put(name, logContext.get(key));
+                  });
+
+        if (named.size() > 0) {
+            data.named.add(named);
+        }
+    }
+
 }

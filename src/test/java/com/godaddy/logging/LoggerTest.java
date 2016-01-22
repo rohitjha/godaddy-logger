@@ -25,6 +25,7 @@ package com.godaddy.logging;
 import ch.qos.logback.classic.spi.ILoggingEvent;
 import ch.qos.logback.classic.spi.LoggingEvent;
 import ch.qos.logback.core.Appender;
+import com.godaddy.logging.messagebuilders.providers.StringMessageBuilderProvider;
 import com.godaddy.logging.models.*;
 import com.google.common.collect.Lists;
 import org.junit.After;
@@ -40,6 +41,7 @@ import org.slf4j.MarkerFactory;
 import java.net.URI;
 import java.net.URISyntaxException;
 import java.util.HashMap;
+import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
 import java.util.UUID;
@@ -53,8 +55,7 @@ import static org.mockito.Mockito.verify;
 
 @RunWith(MockitoJUnitRunner.class)
 public class LoggerTest {
-
-    private Logger logger = LoggerFactory.getLogger(LoggerTest.class);
+    private Logger logger;
 
     @Mock
     private Appender<ILoggingEvent> mockAppender;
@@ -68,6 +69,11 @@ public class LoggerTest {
     @Before
     public void setUp() {
         testLogger.addAppender(mockAppender);
+
+        LoggingConfigs loggingConfigs = LoggingConfigs.builder().messageBuilderFunction(new StringMessageBuilderProvider()).build();
+
+        logger = LoggerFactory.getLogger(LoggerTest.class, loggingConfigs);
+
     }
 
     @Test
@@ -80,6 +86,23 @@ public class LoggerTest {
     }
 
     @Test
+    public void test_unnamed_values_and_message_counters() {
+        Object toLog = new Object() {
+            String horse = "NEIGH";
+            String _message = "message2";
+            String _unnamed_values = "_unnamed_values1";
+            Object a = new Object() {
+                String _message = "a.message";
+            };
+        };
+
+        logger.with(toLog).info("YO");
+
+        assertEquals(getLoggingEvent().getFormattedMessage(), "YO; _message2=\"message2\"; _unnamed_values1=\"_unnamed_values1\"; a._message=\"a.message\"; " +
+                                                              "horse=\"NEIGH\"");
+    }
+
+    @Test
     public void test_cycles() {
         CycleObject cycleObject = new CycleObject();
 
@@ -89,7 +112,7 @@ public class LoggerTest {
 
         logger.with(cycleObject).info("Cycles");
 
-        assertEquals(getLoggingEvent().getFormattedMessage(), "Cycles; text=\"" + cycleObject.text + '\"');
+        assertEquals(getLoggingEvent().getFormattedMessage(), "Cycles; CycleObject.text=\"test_cycles\"");
     }
 
     @Test
@@ -114,7 +137,7 @@ public class LoggerTest {
 
         with.info("test");
 
-        assertEquals(getLoggingEvent().getFormattedMessage(), "test; foo=bar; uuid=" + uuid.toString());
+        assertEquals(getLoggingEvent().getFormattedMessage(), "test; foo=\"bar\"; uuid=\"" + uuid.toString() + "\"");
     }
 
     @Test
@@ -156,7 +179,7 @@ public class LoggerTest {
             }
         }).info("test");
 
-        assertEquals(getLoggingEvent().getFormattedMessage(), "test; key=value; otherKey=otherValue");
+        assertEquals(getLoggingEvent().getFormattedMessage(), "test; key=\"value\"; otherKey=\"otherValue\"");
     }
 
     @Test
@@ -166,7 +189,7 @@ public class LoggerTest {
             put("otherKey", new Engine("V8"));
         }}).info("test");
 
-        assertEquals(getLoggingEvent().getFormattedMessage(), "test; key=value; otherKey=name=\"V8\"");
+        assertEquals(getLoggingEvent().getFormattedMessage(), "test; key=\"value\"; otherKey.Engine.name=\"V8\"");
     }
 
     @Test
@@ -181,8 +204,10 @@ public class LoggerTest {
                                                                                                                                                                new Engine(
                                                                                                                                                                        "V8")));
 
-        String expected = "TEST; age=25; cars.size=2; myCar.cost=55000.2; myCar.country=USA; myCar.engine.name=\"V8\"; myCar.make=\"Ford\"; myCar.model=\"Mustang\"; " +
-                          "myCar.year=2011; myCar.test=\"HI\"; name=\"bob\"; retired=false";
+        String expected = "TEST; Person.myCar.country=USA; Person.myCar.cost=55000.2; Person.myCar.test=\"HI\"; Person.myCar.engine.name=\"V8\"; Person.myCar" +
+                          ".year=2011; Person.myCar.model=\"Mustang\"; Person.myCar.make=\"Ford\"; Person.cars=[{country=GERMANY, cost=45000.2, test=HI, " +
+                          "engine={name=V6}, year=2010, model=A4, make=Audi}, {country=JAPAN, cost=25000.5, test=HI, engine={name=V6}, year=2012, model=Element, " +
+                          "make=Honda}]; Person.name=\"bob\"; Person.retired=false; Person.age=25";
 
         logger.with(person).info("TEST");
 
@@ -233,7 +258,7 @@ public class LoggerTest {
               .with("two", "data2")
               .info("test");
 
-        assertEquals(getLoggingEvent().getFormattedMessage(), "test; two=data2; one=data1");
+        assertEquals(getLoggingEvent().getFormattedMessage(), "test; one=\"data1\"; two=\"data2\"");
     }
 
     @Test
@@ -244,7 +269,7 @@ public class LoggerTest {
 
         with.with("test2", "test2").info("test2");
 
-        assertEquals(getLoggingEvents().get(1).getFormattedMessage(), "test2; test2=test2; capture=data");
+        assertEquals(getLoggingEvents().get(1).getFormattedMessage(), "test2; capture=\"data\"; test2=\"test2\"");
     }
 
     @Test
@@ -267,7 +292,7 @@ public class LoggerTest {
     public void test_with_null_msg() {
         logger.info(null);
 
-        assertEquals(getLoggingEvent().getFormattedMessage(), null);
+        assertEquals(getLoggingEvent().getFormattedMessage(), "null");
     }
 
     @Test
@@ -281,7 +306,7 @@ public class LoggerTest {
     public void test_exception_mapper() {
         logger.with(new GetterThrowsError()).info("test");
 
-        assertEquals(getLoggingEvent().getFormattedMessage(), "test; text=\"<An error occurred logging!>\"");
+        assertEquals(getLoggingEvent().getFormattedMessage(), "test; GetterThrowsError.text=\"<An error occurred logging!>\"");
     }
 
     @Test
@@ -293,16 +318,17 @@ public class LoggerTest {
 
         customLogger.with("foo", "bar").info("test");
 
-        assertEquals(getLoggingEvent().getFormattedMessage(), "test; foo=bar");
+        assertEquals(getLoggingEvent().getFormattedMessage(), "test; foo=\"bar\"");
     }
 
     @Test
     public void test_custom_exception_mapper() {
-        Logger newLogger = LoggerFactory.getLogger(this.getClass(), new LoggingConfigs(LoggingConfigs.getCurrent()).withExceptionTranslator(i -> "<<err>>"));
+        Logger customLogger = LoggerFactory.getLogger(LoggerTest.class,
+                                                      LoggingConfigs.builder().build().withExceptionTranslator(i -> "<<err>>"));
 
-        newLogger.with(new GetterThrowsError()).info("test");
+        customLogger.with(new GetterThrowsError()).info("test");
 
-        assertEquals(getLoggingEvent().getFormattedMessage(), "test; text=\"<<err>>\"");
+        assertEquals(getLoggingEvent().getFormattedMessage(), "test; GetterThrowsError.text=\"<<err>>\"");
     }
 
     @Test
@@ -324,9 +350,10 @@ public class LoggerTest {
               }).info("TEST");
 
         String expected =
-                "TEST; country=USA; month=\"January\"; year=2015; Another String; 1; age=25; cars.size=2; myCar.cost=55000.2; myCar.country=USA; myCar.engine" +
-                ".name=\"V8\";" +
-                " myCar.make=\"Ford\"; myCar.model=\"Mustang\"; myCar.year=2011; myCar.test=\"HI\"; name=\"bob\"; retired=false; My String";
+                "TEST; Another String; 1; My String; Person.myCar.country=USA; Person.myCar.cost=55000.2; Person.myCar.test=\"HI\"; Person.myCar.engine.name=\"V8\"; " +
+                "Person.myCar.year=2011; Person.myCar.model=\"Mustang\"; Person.myCar.make=\"Ford\"; Person.cars=[{country=GERMANY, cost=45000.2, test=HI, " +
+                "engine={name=V6}, year=2010, model=A4, make=Audi}, {country=JAPAN, cost=25000.5, test=HI, engine={name=V6}, year=2012, model=Element, make=Honda}]; " +
+                "Person.name=\"bob\"; Person.retired=false; Person.age=25; country=USA; month=\"January\"; year=2015";
 
         assertEquals(getLoggingEvent().getFormattedMessage(), expected);
     }
@@ -340,8 +367,8 @@ public class LoggerTest {
             Car car = new Car("Element", 2012, "Honda", 25000.50, Country.JAPAN, new Engine("V6"));
         }).info("TEST");
 
-        String expected = "TEST; age=27; car.cost=25000.5; car.country=JAPAN; car.engine.name=\"V6\"; car.make=\"Honda\"; car.model=\"Element\"; car.year=2012; car" +
-                          ".test=\"HI\"; name=\"Brendan\"";
+        String expected = "TEST; age=27; car.country=JAPAN; car.cost=25000.5; car.test=\"HI\"; car.engine.name=\"V6\"; car.year=2012; car.model=\"Element\"; car" +
+                          ".make=\"Honda\"; name=\"Brendan\"";
 
         assertEquals(getLoggingEvent().getFormattedMessage(), expected);
     }
@@ -352,16 +379,18 @@ public class LoggerTest {
 
         logger.with(diffGetters).info("TEST");
 
-        String expected = "TEST; get=\"getTest\"; is=\"isTest\"";
+        String expected = "TEST; DifferentGetters.get=\"getTest\"; DifferentGetters.is=\"isTest\"";
 
         assertEquals(getLoggingEvent().getFormattedMessage(), expected);
     }
 
     @Test
     public void test_custom_mapping_inheritance() {
-        LoggingConfigs.getCurrent().withOverride(CustomMapping.class, CustomMapping::testString);
+        Logger customLogger = LoggerFactory.getLogger(LoggerTest.class,
+                                                      LoggingConfigs.builder().build().withOverride(CustomMapping.class, CustomMapping::testString));
 
-        logger.with(new CustomMappingImpl()).info("TEST");
+
+        customLogger.with(new CustomMappingImpl()).info("TEST");
 
         String expected = "TEST; Testing Custom Mapping Inheritance.";
 
@@ -374,7 +403,7 @@ public class LoggerTest {
 
         logger.with(car).info("TEST");
 
-        String expected = "TEST; cost=70000.0; country=GERMANY; engine=<null>; make=\"Porsche\"; model=\"911\"; year=2015; test=\"HI\"";
+        String expected = "TEST; Car.country=GERMANY; Car.cost=70000.0; Car.test=\"HI\"; Car.engine=<null>; Car.year=2015; Car.model=\"911\"; Car.make=\"Porsche\"";
 
         assertEquals(getLoggingEvent().getFormattedMessage(), expected);
     }
@@ -387,8 +416,8 @@ public class LoggerTest {
 
         logger.with(annotatedObject).info("Annotation Logging");
 
-        String expected = "Annotation Logging; creditCardNumber=\"5d4e923fe014cb34f4c7ed17b82d6c58\"; notAnnotated=\"NOT ANNOTATED\"; " +
-                          "notAnnotatedMethod=\"Not Annotated\"";
+        String expected = "Annotation Logging; AnnotatedObject.creditCardNumber=\"5d4e923fe014cb34f4c7ed17b82d6c58\"; AnnotatedObject.notAnnotated=\"NOT ANNOTATED\"; " +
+                          "AnnotatedObject.notAnnotatedMethod=\"Not Annotated\"";
 
         assertEquals(getLoggingEvent().getFormattedMessage(), expected);
     }
@@ -406,7 +435,40 @@ public class LoggerTest {
 
         logger.with("array", array).info("Logging Array");
 
-        assertEquals(getLoggingEvent().getFormattedMessage(), "Logging Array; array=3");
+        assertEquals(getLoggingEvent().getFormattedMessage(), "Logging Array; array=[1, 2, 3]");
+    }
+
+    @Test
+    public void test_collection_filter() {
+        Logger customLogger = LoggerFactory.getLogger(LoggerTest.class,
+                                                      LoggingConfigs.builder().messageBuilderFunction(new StringMessageBuilderProvider()).build().withCollectionFilter(
+                                                              collection -> {
+                                                                  int maxSize = 1;
+
+                                                                  Iterator itr = collection.iterator();
+                                                                  int count = 0;
+
+                                                                  while (itr.hasNext()) {
+                                                                      itr.next();
+
+                                                                      if (count >= maxSize) {
+                                                                          itr.remove();
+                                                                      }
+
+                                                                      count++;
+                                                                  }
+                                                                  return collection;
+                                                              }));
+
+        List<Integer> nums = Lists.newArrayList(1,2);
+
+        logger.with("nonFilteredList", nums).info("nonFilteredList");
+
+        assertEquals(getLoggingEvent().getFormattedMessage(), "nonFilteredList; nonFilteredList=[1, 2]");
+
+        customLogger.with("filteredList", nums).info("filteredList");
+
+        assertEquals(getLoggingEvent().getFormattedMessage(), "filteredList; filteredList=[1]");
     }
 
     private LoggingEvent getLoggingEvent() {

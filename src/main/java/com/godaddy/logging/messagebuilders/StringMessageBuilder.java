@@ -36,6 +36,7 @@ import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Map;
 
+@Deprecated
 public class StringMessageBuilder extends LoggerMessageBuilder<String> {
     private static final String SEPARATOR = "; ";
 

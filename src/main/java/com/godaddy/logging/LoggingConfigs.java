@@ -26,8 +26,8 @@ package com.godaddy.logging;
 
 import com.godaddy.logging.logger.LoggerImpl;
 import com.godaddy.logging.logger.MarkerAppendingLogger;
-import com.godaddy.logging.logstash.LogstashMessageBuilderProvider;
-import com.godaddy.logging.messagebuilders.StringMessageBuilder;
+import com.godaddy.logging.messagebuilders.providers.LogstashMessageBuilderProvider;
+import com.godaddy.logging.messagebuilders.providers.StringMessageBuilderProvider;
 import com.google.common.collect.ImmutableSet;
 import com.google.common.collect.Maps;
 import com.google.common.collect.Sets;
@@ -35,7 +35,9 @@ import lombok.Builder;
 import lombok.Data;
 import lombok.Getter;
 
+import java.util.Collection;
 import java.util.HashMap;
+import java.util.Iterator;
 import java.util.Map;
 import java.util.Set;
 import java.util.UUID;
@@ -52,35 +54,35 @@ public class LoggingConfigs {
     /**
      * The custom mapper provides the ability to pass in a custom toString function for a specific class.
      */
-    private final Map<Class<?>, Function<Object, String>> customMapper;
+    private Map<Class<?>, Function<Object, String>> customMapper;
 
     /**
      * The recursiveLevel defines the number of inner class levels to be logged.
      *
      * Default value is "5".
      */
-    private final Integer recursiveLevel;
+    private Integer recursiveLevel;
 
     /**
      * Methods beginning with one of these defined prefixes will be logged.
      *
      * Default values are "get" and "is".
      */
-    private final Set<String> methodPrefixes;
+    private Set<String> methodPrefixes;
 
     /**
      * Values that contain these prefixes will not be logged.
      *
      * Default values are "val$" and "this$".
      */
-    private final Set<String> excludesPrefixes;
+    private Set<String> excludesPrefixes;
 
     /**
      * Message builder to format logs.
      *
      * It uses the LoggerMessageBuilder by default.
      */
-    private final MessageBuilderProvider<?> messageBuilderFunction;
+    private MessageBuilderProvider<?> messageBuilderFunction;
 
     /**
      * Processor used to hash data.
@@ -89,17 +91,24 @@ public class LoggingConfigs {
      * MD5 is not cryptographically secure, but it is extremely fast.
      * For a more robust encryption you can use your own HashProcessor.
      */
-    private final HashProcessor hashProcessor;
+    private HashProcessor hashProcessor;
 
     /**
      * Function to take any exceptions thrown by the logger and translate it to a string
      */
-    private final ExceptionTranslator exceptionTranslator;
+    private ExceptionTranslator exceptionTranslator;
 
     /**
      * Function which returns a logger implementation. By default, LoggerImpl is used.
      */
     private BiFunction<Class<?>, LoggingConfigs, Logger> logger;
+
+    /**
+     * Allows the ability to filter collections, if you only want a maximum of 10 elements to be logged per
+     * collection you can do so by providing a filter function that will ensure only 10 elements are logged.
+     * By default collections are filtered to only contain 50 items.
+     */
+    private Function<Collection, Collection> collectionFilter;
 
     LoggingConfigs(
             Map<Class<?>, Function<Object, String>> customMapper,
@@ -109,7 +118,8 @@ public class LoggingConfigs {
             MessageBuilderProvider<?> messageBuilderFunction,
             HashProcessor hashProcessor,
             ExceptionTranslator exceptionTranslator,
-            BiFunction<Class<?>, LoggingConfigs, Logger> logger) {
+            BiFunction<Class<?>, LoggingConfigs, Logger> logger,
+            Function<Collection, Collection> collectionFilter) {
 
         this.customMapper = appendDefaultsToCustomMapper(customMapper);
 
@@ -122,27 +132,27 @@ public class LoggingConfigs {
         this.logger = logger == null ? (clazz, configs) -> new LoggerImpl(new Slf4WrapperLogger(org.slf4j.LoggerFactory.getLogger(clazz)), configs)
                                      : logger;
 
-        this.messageBuilderFunction = messageBuilderFunction != null ? messageBuilderFunction : new MessageBuilderProvider<String>(){
-            @Override public MessageBuilder<String> getBuilder(LoggingConfigs configs) {
-                return new StringMessageBuilder(configs);
-            }
-
-            @Override public String formatPayload(final LogContext<String> logContext) {
-                if(logContext != null && logContext instanceof InitialLogContext){
-                    return ((InitialLogContext) logContext).getLogMessage();
-                }
-
-                RunningLogContext<String> runningLogContext = (RunningLogContext<String>) logContext;
-
-                if(runningLogContext == null || runningLogContext.getData() == null){
-                    return null;
-                }
-
-                return runningLogContext.getData();
-            }
-        };
+        this.messageBuilderFunction = messageBuilderFunction != null ? messageBuilderFunction : new StringMessageBuilderProvider();
         this.hashProcessor = hashProcessor == null ? new MD5HashProcessor() : hashProcessor;
         this.exceptionTranslator = exceptionTranslator == null ? i -> "<An error occurred logging!>" : exceptionTranslator;
+        this.collectionFilter = collectionFilter == null ? (collection) -> {
+            int maxSize = 50;
+
+            Iterator itr = collection.iterator();
+            int count = 0;
+
+            while(itr.hasNext()) {
+                itr.next();
+
+                if(count >= maxSize) {
+                    itr.remove();
+                }
+
+                count++;
+            }
+            return collection;
+
+        } : collectionFilter;
     }
 
     public LoggingConfigs(LoggingConfigs loggingConfigs) {
@@ -153,6 +163,7 @@ public class LoggingConfigs {
         this.messageBuilderFunction = loggingConfigs.getMessageBuilderFunction();
         this.hashProcessor = loggingConfigs.getHashProcessor();
         this.exceptionTranslator = loggingConfigs.getExceptionTranslator();
+        this.collectionFilter = loggingConfigs.getCollectionFilter();
     }
 
     /**
@@ -161,14 +172,9 @@ public class LoggingConfigs {
      * @return logging configuration
      */
     public LoggingConfigs withRecursiveLevel(Integer recursiveLevel) {
-        return new LoggingConfigs(this.getCustomMapper(),
-                                  recursiveLevel,
-                                  this.getMethodPrefixes(),
-                                  this.getExcludesPrefixes(),
-                                  this.getMessageBuilderFunction(),
-                                  this.getHashProcessor(),
-                                  this.getExceptionTranslator(),
-                                  this.logger);
+        this.recursiveLevel = recursiveLevel;
+
+        return this;
     }
 
     /**
@@ -177,25 +183,29 @@ public class LoggingConfigs {
      * @return logging configuration
      */
     public LoggingConfigs withMessageBuilderFunction(MessageBuilderProvider<?> messageBuilderFunction) {
-        return new LoggingConfigs(this.getCustomMapper(),
-                                  this.getRecursiveLevel(),
-                                  this.getMethodPrefixes(),
-                                  this.getExcludesPrefixes(),
-                                  messageBuilderFunction,
-                                  this.getHashProcessor(),
-                                  this.getExceptionTranslator(),
-                                  this.logger);
+        this.messageBuilderFunction = messageBuilderFunction;
+
+        return this;
+    }
+
+    public LoggingConfigs withLogger(BiFunction<Class<?>, LoggingConfigs, Logger> logger) {
+        this.logger = logger;
+
+        return this;
     }
 
     public LoggingConfigs useJson() {
-        return new LoggingConfigs(this.getCustomMapper(),
-                                  this.getRecursiveLevel(),
-                                  this.getMethodPrefixes(),
-                                  this.getExcludesPrefixes(),
-                                  new LogstashMessageBuilderProvider(),
-                                  this.getHashProcessor(),
-                                  this.getExceptionTranslator(),
-                                  (clazz, configs) -> new MarkerAppendingLogger(new Slf4WrapperLogger(org.slf4j.LoggerFactory.getLogger(clazz)), configs));
+        this.messageBuilderFunction = new LogstashMessageBuilderProvider();
+
+        this.logger = (clazz, configs) -> new MarkerAppendingLogger(new Slf4WrapperLogger(org.slf4j.LoggerFactory.getLogger(clazz)), configs);
+
+        return this;
+    }
+
+    public LoggingConfigs withCollectionFilter(Function<Collection, Collection> collectionFilter) {
+        this.collectionFilter = collectionFilter;
+
+        return this;
     }
 
     /**
@@ -204,14 +214,9 @@ public class LoggingConfigs {
      * @return logging configuration
      */
     public LoggingConfigs withHashProcessor(HashProcessor hashProcessor) {
-        return new LoggingConfigs(this.getCustomMapper(),
-                                  this.getRecursiveLevel(),
-                                  this.getMethodPrefixes(),
-                                  this.getExcludesPrefixes(),
-                                  this.getMessageBuilderFunction(),
-                                  hashProcessor,
-                                  this.getExceptionTranslator(),
-                                  this.logger);
+        this.hashProcessor = hashProcessor;
+
+        return this;
     }
 
     /**
@@ -220,14 +225,9 @@ public class LoggingConfigs {
      * @return logging configuration
      */
     public LoggingConfigs withExceptionTranslator(ExceptionTranslator exceptionTranslator) {
-        return new LoggingConfigs(this.getCustomMapper(),
-                                  this.getRecursiveLevel(),
-                                  this.getMethodPrefixes(),
-                                  this.getExcludesPrefixes(),
-                                  this.getMessageBuilderFunction(),
-                                  this.getHashProcessor(),
-                                  exceptionTranslator,
-                                  this.logger);
+        this.exceptionTranslator = exceptionTranslator;
+
+        return this;
     }
 
     /**
