@@ -40,6 +40,7 @@ import org.slf4j.MarkerFactory;
 
 import java.net.URI;
 import java.net.URISyntaxException;
+import java.util.Collection;
 import java.util.HashMap;
 import java.util.Iterator;
 import java.util.List;
@@ -48,6 +49,7 @@ import java.util.UUID;
 import java.util.function.Function;
 import java.util.stream.IntStream;
 
+import static java.util.stream.Collectors.toList;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertTrue;
 import static org.mockito.Mockito.atLeastOnce;
@@ -442,23 +444,8 @@ public class LoggerTest {
     public void test_collection_filter() {
         Logger customLogger = LoggerFactory.getLogger(LoggerTest.class,
                                                       LoggingConfigs.builder().messageBuilderFunction(new StringMessageBuilderProvider()).build().withCollectionFilter(
-                                                              collection -> {
-                                                                  int maxSize = 1;
-
-                                                                  Iterator itr = collection.iterator();
-                                                                  int count = 0;
-
-                                                                  while (itr.hasNext()) {
-                                                                      itr.next();
-
-                                                                      if (count >= maxSize) {
-                                                                          itr.remove();
-                                                                      }
-
-                                                                      count++;
-                                                                  }
-                                                                  return collection;
-                                                              }));
+                                                              collection -> (Collection) collection.stream().limit(1).collect(toList())
+                                                              ));
 
         List<Integer> nums = Lists.newArrayList(1,2);
 

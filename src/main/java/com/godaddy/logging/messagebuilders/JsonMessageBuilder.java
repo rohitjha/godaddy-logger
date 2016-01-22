@@ -85,7 +85,7 @@ public class JsonMessageBuilder extends LoggerMessageBuilder<List<Map<String, Ob
                 messageBuilderStack.peek().put(key, null);
             }
             else {
-
+                //get a list of all the nested with statements formatted as maps
                 List<Map<String, Object>> data = jsonMessageBuilder.buildMessage(null, logMessage.get(key)).getData();
 
                 Object process = process(data);

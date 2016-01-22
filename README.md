@@ -52,6 +52,7 @@ The GoDaddy logger can be configured in various ways.
  - **Exception mapper function**: The exception mapper function provides the ability to translate any `Throwable` that might occur at runtime from the logger to inspect exceptions and return a string for that field based on the exception.
  - **Hash Processor**: Processor used to hash data which has been marked to be hashed via [LoggingScope](#loggingScope). By default the MD5HashProcessor is used which uses Guava's MD5 hashing algorithm to hash data. MD5 is not cryptographically secure, but it is extremely fast. For a more robust encryption you can use your own HashProcessor.
  - **Logger**: This defines the Logger Implementation. It allows the use of a custom logger implementation. By default the LoggerImpl is used.
+ - **Collection Filter**: Allows the ability to filter collections. By default, collections are filtered to only log 50 entries.
 
 A logger can be instantiated with a set of LoggingConfigs as follows (If logging configs aren't passed, the set of default logging configs is used):
 ```

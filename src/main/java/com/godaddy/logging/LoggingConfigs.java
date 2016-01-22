@@ -44,6 +44,8 @@ import java.util.UUID;
 import java.util.function.BiFunction;
 import java.util.function.Function;
 
+import static java.util.stream.Collectors.toList;
+
 @Builder
 @Data
 public class LoggingConfigs {
@@ -135,24 +137,7 @@ public class LoggingConfigs {
         this.messageBuilderFunction = messageBuilderFunction != null ? messageBuilderFunction : new StringMessageBuilderProvider();
         this.hashProcessor = hashProcessor == null ? new MD5HashProcessor() : hashProcessor;
         this.exceptionTranslator = exceptionTranslator == null ? i -> "<An error occurred logging!>" : exceptionTranslator;
-        this.collectionFilter = collectionFilter == null ? (collection) -> {
-            int maxSize = 50;
-
-            Iterator itr = collection.iterator();
-            int count = 0;
-
-            while(itr.hasNext()) {
-                itr.next();
-
-                if(count >= maxSize) {
-                    itr.remove();
-                }
-
-                count++;
-            }
-            return collection;
-
-        } : collectionFilter;
+        this.collectionFilter = collectionFilter == null ? collection -> (Collection) collection.stream().limit(50).collect(toList()) : collectionFilter;
     }
 
     public LoggingConfigs(LoggingConfigs loggingConfigs) {

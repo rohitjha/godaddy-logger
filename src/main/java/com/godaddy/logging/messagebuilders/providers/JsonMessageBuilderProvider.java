@@ -30,6 +30,7 @@ import com.godaddy.logging.MessageBuilderProvider;
 import com.godaddy.logging.RunningLogContext;
 import com.godaddy.logging.messagebuilders.JsonContextUtils;
 import com.godaddy.logging.messagebuilders.JsonMessageBuilder;
+import net.logstash.logback.encoder.org.apache.commons.lang.StringUtils;
 
 import java.util.ArrayList;
 import java.util.HashMap;
@@ -90,38 +91,43 @@ public abstract class JsonMessageBuilderProvider implements MessageBuilderProvid
                          .stream()
                          .forEach(withObject -> {
 
-                             appendUnnamedContext(withObject, data);
+                             Map<String, Object> unnamedContext = getUnnamedContext(withObject);
 
-                             appendNamedContext(withObject, data, keyNames, keyCollisionIdentifier);
+                             Map<String, Object> namedContext = appendNamedContext(withObject, keyNames, keyCollisionIdentifier);
+
+                             if (unnamedContext.size() > 0) {
+                                 data.unnamed.add(unnamedContext);
+                             }
+                             if(namedContext.size() > 0) {
+                                 data.named.add(namedContext);
+                             }
                          });
 
         return data;
     }
 
-    private void appendUnnamedContext(Map<String, Object> logContext, FoldedLogData data) {
-        HashMap<String, Object> unnamed = new HashMap<>();
+    private Map<String, Object> getUnnamedContext(Map<String, Object> logContext) {
+        Map<String, Object> unnamed = new HashMap<>();
 
         logContext.keySet()
                   .stream()
-                  .filter(key -> key.equals(""))
+                  .filter(key -> key.equals(StringUtils.EMPTY))
                   .forEach(key -> unnamed.put(key, logContext.get(key)));
 
-        if(unnamed.size() > 0) {
-            data.unnamed.add(unnamed);
-        }
+        return unnamed;
     }
 
-    private void appendNamedContext(Map<String, Object> logContext, FoldedLogData data, Map<String, List<String>> keyNames, Map<String, Integer> keyCollisionIdentifier) {
-        HashMap<String, Object> named = new HashMap<>();
+    private Map<String, Object> appendNamedContext(Map<String, Object> logContext, Map<String, List<String>> keyNames, Map<String, Integer> keyCollisionIdentifier) {
+        Map<String, Object> named = new HashMap<>();
 
         logContext.keySet()
                   .stream()
-                  .filter(key -> !key.equals(""))
+                  .filter(key -> !key.equals(StringUtils.EMPTY))
                   .forEach(key -> {
                       String name = key;
                       /**
                        * _unnamed_values is a reserved key for values with no key.
-                       * If a named key with the value of _unnamed_values is received, it will be appended to.
+                       * If a named key with the value of _unnamed_values is received, a counter value will be appended to the key name.
                        */
                       if (keyNames.get(key).size() > 1 || key.equals(CommonKeys.UNNAMED_VALUES_KEY)) {
                           if (!keyCollisionIdentifier.containsKey(key)) {
@@ -138,9 +144,7 @@ public abstract class JsonMessageBuilderProvider implements MessageBuilderProvid
                       named.put(name, logContext.get(key));
                   });
 
-        if (named.size() > 0) {
-            data.named.add(named);
-        }
+        return named;
     }
 
 }
