@@ -1,0 +1,11 @@
+language: java
+jdk:
+  - oraclejdk8
+
+after_success:
+  - ./deploy.sh
+
+notifications:
+  webhooks:
+    - https://hooks.slack.com/services/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
+    - https://hooks.slack.com/services/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
