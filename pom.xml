@@ -258,10 +258,6 @@
                                 </goals>
                             </execution>
                         </executions>
-                        <configuration>
-                            <useAgent>true</useAgent>
-                            <keyname>bcam909</keyname>
-                        </configuration>
                     </plugin>
                 </plugins>
             </build>
