@@ -1,0 +1,13 @@
+<settings xmlns="http://maven.apache.org/SETTINGS/1.0.0">
+    <servers>
+        <server>
+            <id>bcam909</id>
+            <passphrase>${env.GPG_PASSWORD}</passphrase>
+        </server>
+        <server>
+            <id>ossrh</id>
+            <username>bcam909</username>
+            <password>${env.BCAM_SONATYPE_PASSWORD}</password>
+        </server>
+    </servers>
+</settings>
