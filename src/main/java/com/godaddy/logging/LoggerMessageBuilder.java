@@ -27,10 +27,7 @@ import com.esotericsoftware.reflectasm.MethodAccess;
 import com.google.common.collect.Lists;
 import com.google.common.primitives.Primitives;
 
-import java.lang.reflect.Array;
-import java.util.Arrays;
 import java.util.Collection;
-import java.util.Collections;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;

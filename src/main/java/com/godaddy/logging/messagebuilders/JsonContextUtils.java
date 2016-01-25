@@ -1,5 +1,4 @@
 /**
- *
  * Copyright (c) 2015 GoDaddy
  *
  * Permission is hereby granted, free of charge, to any person obtaining a copy
@@ -19,22 +18,33 @@
  * LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
  * OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
  * THE SOFTWARE.
- *
  */
 
-package com.godaddy.logging;
+package com.godaddy.logging.messagebuilders;
 
-public interface MessageBuilderProvider<T> {
-    MessageBuilder<T> getBuilder(LoggingConfigs configs);
+import com.godaddy.logging.CommonKeys;
+import com.godaddy.logging.InitialLogContext;
+import com.godaddy.logging.LogContext;
+import com.godaddy.logging.RunningLogContext;
+import com.google.common.collect.Lists;
 
-    /**
-     * Return any formatted payload of the log context. The owning logger should know what to do with this type.
-     *
-     * For example, if you want to format your message as a string return a string and the logger should log that message.
-     *
-     * If you want to format your context as a Marker then fold the context into a marker and return that.
-     * @param runningLogContext
-     * @return
-     */
-    Object formatPayload(LogContext<T> runningLogContext);
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
+
+public class JsonContextUtils {
+    public static RunningLogContext<List<Map<String, Object>>> initialToRunning(final LogContext<List<Map<String, Object>>> previous) {
+        if (previous instanceof InitialLogContext) {
+            final String logMessage = ((InitialLogContext) previous).getLogMessage();
+
+            Map<String, Object> initialMap = new HashMap<>();
+            initialMap.put(CommonKeys.LOG_MESSAGE_KEY, logMessage);
+
+            return new RunningLogContext<>(Lists.newArrayList(initialMap));
+
+        }
+        else {
+            return ((RunningLogContext<List<Map<String, Object>>>) previous);
+        }
+    }
 }

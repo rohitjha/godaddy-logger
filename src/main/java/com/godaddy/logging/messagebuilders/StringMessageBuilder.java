@@ -22,15 +22,21 @@
  *
  */
 
-package com.godaddy.logging;
+package com.godaddy.logging.messagebuilders;
 
-import com.google.common.primitives.Primitives;
+import com.godaddy.logging.InitialLogContext;
+import com.godaddy.logging.LogContext;
+import com.godaddy.logging.LogMessage;
+import com.godaddy.logging.LoggerMessageBuilder;
+import com.godaddy.logging.LoggingConfigs;
+import com.godaddy.logging.RunningLogContext;
 
 import java.lang.reflect.Array;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Map;
 
+@Deprecated
 public class StringMessageBuilder extends LoggerMessageBuilder<String> {
     private static final String SEPARATOR = "; ";
 

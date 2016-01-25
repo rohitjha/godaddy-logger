@@ -1,5 +1,4 @@
 /**
- *
  * Copyright (c) 2015 GoDaddy
  *
  * Permission is hereby granted, free of charge, to any person obtaining a copy
@@ -19,22 +18,36 @@
  * LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
  * OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
  * THE SOFTWARE.
- *
  */
 
-package com.godaddy.logging;
+package com.godaddy.logging.logger;
 
-public interface MessageBuilderProvider<T> {
-    MessageBuilder<T> getBuilder(LoggingConfigs configs);
+import com.godaddy.logging.LogContext;
+import com.godaddy.logging.Logger;
+import com.godaddy.logging.LoggingConfigs;
+import com.godaddy.logging.MessageBuilder;
 
-    /**
-     * Return any formatted payload of the log context. The owning logger should know what to do with this type.
-     *
-     * For example, if you want to format your message as a string return a string and the logger should log that message.
-     *
-     * If you want to format your context as a Marker then fold the context into a marker and return that.
-     * @param runningLogContext
-     * @return
-     */
-    Object formatPayload(LogContext<T> runningLogContext);
+public class AnnotatingLogger extends LoggerImpl {
+
+    private final Logger root;
+    private final LoggerImpl parent;
+    private Object obj;
+    private final LoggingConfigs configs;
+
+
+    public AnnotatingLogger(Logger root, LoggerImpl parent, Object obj, final LoggingConfigs configs) {
+        super(root, configs);
+        this.root = root;
+        this.parent = parent;
+
+        this.obj = obj;
+        this.configs = configs;
+    }
+
+    @Override
+    public LogContext<?> getMessage(LogContext<?> previous) {
+        MessageBuilder messageBuilder = configs.getMessageBuilderFunction().getBuilder(configs);
+
+        return parent.getMessage(messageBuilder.buildMessage(previous, obj));
+    }
 }

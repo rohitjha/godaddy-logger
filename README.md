@@ -52,6 +52,7 @@ The GoDaddy logger can be configured in various ways.
  - **Exception mapper function**: The exception mapper function provides the ability to translate any `Throwable` that might occur at runtime from the logger to inspect exceptions and return a string for that field based on the exception.
  - **Hash Processor**: Processor used to hash data which has been marked to be hashed via [LoggingScope](#loggingScope). By default the MD5HashProcessor is used which uses Guava's MD5 hashing algorithm to hash data. MD5 is not cryptographically secure, but it is extremely fast. For a more robust encryption you can use your own HashProcessor.
  - **Logger**: This defines the Logger Implementation. It allows the use of a custom logger implementation. By default the LoggerImpl is used.
+ - **Collection Filter**: Allows the ability to filter collections. By default, collections are filtered to only log 50 entries.
 
 A logger can be instantiated with a set of LoggingConfigs as follows (If logging configs aren't passed, the set of default logging configs is used):
 ```
@@ -136,6 +137,11 @@ When the above code block is run, the following will be output in the logs as ex
 ```
 15:50:44.667 [main] INFO  com.godaddy.logging.LoggerTest - Annotation Logging; creditCardNumber="5d4e923fe014cb34f4c7ed17b82d6c58"; notAnnotated="NOT ANNOTATED"; notAnnotatedMethod="Not Annotated"
 ```
+
+##Structured JSON Logging with Logstash
+There is support for JSON structure logging with Logstash. To use JSON structured logging your logging configs need to be configured:
+`LoggingConfigs configs = LoggingConfigs.getCurrent().useJson();`
+The with functionality now appends a LogstashMarker to the logstatement instead of just appending a String at the end of your log message. You need to setup Logstash or some other appender to handle these markers. You can check out LogstashTest.java and logstash-test.xml to see an example of how this is done.
 
 
 

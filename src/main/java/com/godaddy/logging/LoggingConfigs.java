@@ -1,5 +1,4 @@
 /**
- *
  * Copyright (c) 2015 GoDaddy
  *
  * Permission is hereby granted, free of charge, to any person obtaining a copy
@@ -19,18 +18,23 @@
  * LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
  * OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
  * THE SOFTWARE.
- *
  */
 
 package com.godaddy.logging;
 
+import com.godaddy.logging.logger.LoggerImpl;
+import com.godaddy.logging.logger.MarkerAppendingLogger;
+import com.godaddy.logging.messagebuilders.providers.LogstashMessageBuilderProvider;
+import com.godaddy.logging.messagebuilders.providers.StringMessageBuilderProvider;
 import com.google.common.collect.ImmutableSet;
 import com.google.common.collect.Maps;
 import com.google.common.collect.Sets;
 import lombok.Builder;
 import lombok.Data;
 import lombok.Getter;
+import lombok.Setter;
 
+import java.util.Collection;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.Set;
@@ -38,10 +42,13 @@ import java.util.UUID;
 import java.util.function.BiFunction;
 import java.util.function.Function;
 
+import static java.util.stream.Collectors.toList;
+
 @Builder
 @Data
 public class LoggingConfigs {
 
+    @Setter
     @Getter
     private static LoggingConfigs current = builder().build();
 
@@ -95,7 +102,14 @@ public class LoggingConfigs {
     /**
      * Function which returns a logger implementation. By default, LoggerImpl is used.
      */
-    private BiFunction<Class<?>, LoggingConfigs, Logger> logger;
+    private final BiFunction<Class<?>, LoggingConfigs, Logger> logger;
+
+    /**
+     * Allows the ability to filter collections, if you only want a maximum of 10 elements to be logged per
+     * collection you can do so by providing a filter function that will ensure only 10 elements are logged.
+     * By default collections are filtered to only contain 50 items.
+     */
+    private final Function<Collection, Collection> collectionFilter;
 
     LoggingConfigs(
             Map<Class<?>, Function<Object, String>> customMapper,
@@ -105,7 +119,8 @@ public class LoggingConfigs {
             MessageBuilderProvider<?> messageBuilderFunction,
             HashProcessor hashProcessor,
             ExceptionTranslator exceptionTranslator,
-            BiFunction<Class<?>, LoggingConfigs, Logger> logger) {
+            BiFunction<Class<?>, LoggingConfigs, Logger> logger,
+            Function<Collection, Collection> collectionFilter) {
 
         this.customMapper = appendDefaultsToCustomMapper(customMapper);
 
@@ -118,27 +133,10 @@ public class LoggingConfigs {
         this.logger = logger == null ? (clazz, configs) -> new LoggerImpl(new Slf4WrapperLogger(org.slf4j.LoggerFactory.getLogger(clazz)), configs)
                                      : logger;
 
-        this.messageBuilderFunction = messageBuilderFunction != null ? messageBuilderFunction : new MessageBuilderProvider<String>(){
-            @Override public MessageBuilder<String> getBuilder(LoggingConfigs configs) {
-                return new StringMessageBuilder(configs);
-            }
-
-            @Override public String formatPayload(final LogContext<String> logContext) {
-                if(logContext != null && logContext instanceof InitialLogContext){
-                    return ((InitialLogContext) logContext).getLogMessage();
-                }
-
-                RunningLogContext<String> runningLogContext = (RunningLogContext<String>) logContext;
-
-                if(runningLogContext == null || runningLogContext.getData() == null){
-                    return null;
-                }
-
-                return runningLogContext.getData();
-            }
-        };
+        this.messageBuilderFunction = messageBuilderFunction != null ? messageBuilderFunction : new StringMessageBuilderProvider();
         this.hashProcessor = hashProcessor == null ? new MD5HashProcessor() : hashProcessor;
         this.exceptionTranslator = exceptionTranslator == null ? i -> "<An error occurred logging!>" : exceptionTranslator;
+        this.collectionFilter = collectionFilter == null ? collection -> (Collection) collection.stream().limit(50).collect(toList()) : collectionFilter;
     }
 
     public LoggingConfigs(LoggingConfigs loggingConfigs) {
@@ -148,11 +146,14 @@ public class LoggingConfigs {
         this.recursiveLevel = loggingConfigs.getRecursiveLevel();
         this.messageBuilderFunction = loggingConfigs.getMessageBuilderFunction();
         this.hashProcessor = loggingConfigs.getHashProcessor();
+        this.logger = loggingConfigs.getLogger();
         this.exceptionTranslator = loggingConfigs.getExceptionTranslator();
+        this.collectionFilter = loggingConfigs.getCollectionFilter();
     }
 
     /**
      * Creates an Immutable copy of Logging Configs with a newly defined Recursive Level.
+     *
      * @param recursiveLevel how deep do you want the logging to go for each object
      * @return logging configuration
      */
@@ -164,11 +165,13 @@ public class LoggingConfigs {
                                   this.getMessageBuilderFunction(),
                                   this.getHashProcessor(),
                                   this.getExceptionTranslator(),
-                                  this.logger);
+                                  this.logger,
+                                  this.getCollectionFilter());
     }
 
     /**
      * Creates an Immutable copy of Logging Configs with a newly defined Message Builder Function.
+     *
      * @param messageBuilderFunction message builder provider
      * @return logging configuration
      */
@@ -180,11 +183,49 @@ public class LoggingConfigs {
                                   messageBuilderFunction,
                                   this.getHashProcessor(),
                                   this.getExceptionTranslator(),
-                                  this.logger);
+                                  this.logger,
+                                  this.getCollectionFilter());
+    }
+
+    public LoggingConfigs withLogger(BiFunction<Class<?>, LoggingConfigs, Logger> logger) {
+        return new LoggingConfigs(this.getCustomMapper(),
+                                  this.getRecursiveLevel(),
+                                  this.getMethodPrefixes(),
+                                  this.getExcludesPrefixes(),
+                                  messageBuilderFunction,
+                                  this.getHashProcessor(),
+                                  this.getExceptionTranslator(),
+                                  logger,
+                                  this.getCollectionFilter());
+    }
+
+    public LoggingConfigs useJson() {
+        return new LoggingConfigs(this.getCustomMapper(),
+                                  this.getRecursiveLevel(),
+                                  this.getMethodPrefixes(),
+                                  this.getExcludesPrefixes(),
+                                  new LogstashMessageBuilderProvider(),
+                                  this.getHashProcessor(),
+                                  this.getExceptionTranslator(),
+                                  (clazz, configs) -> new MarkerAppendingLogger(new Slf4WrapperLogger(org.slf4j.LoggerFactory.getLogger(clazz)), configs),
+                                  this.getCollectionFilter());
+    }
+
+    public LoggingConfigs withCollectionFilter(Function<Collection, Collection> collectionFilter) {
+        return new LoggingConfigs(this.getCustomMapper(),
+                                  this.getRecursiveLevel(),
+                                  this.getMethodPrefixes(),
+                                  this.getExcludesPrefixes(),
+                                  this.getMessageBuilderFunction(),
+                                  this.getHashProcessor(),
+                                  this.getExceptionTranslator(),
+                                  this.logger,
+                                  collectionFilter);
     }
 
     /**
      * Creates an Immutable copy of Logging Configs with a newly defined Hash Processor.
+     *
      * @param hashProcessor hash processor
      * @return logging configuration
      */
@@ -196,11 +237,13 @@ public class LoggingConfigs {
                                   this.getMessageBuilderFunction(),
                                   hashProcessor,
                                   this.getExceptionTranslator(),
-                                  this.logger);
+                                  this.logger,
+                                  this.getCollectionFilter());
     }
 
     /**
      * Creates an Immutable copy of Logging Configs with a newly exception translator
+     *
      * @param exceptionTranslator exception translator
      * @return logging configuration
      */
@@ -212,17 +255,19 @@ public class LoggingConfigs {
                                   this.getMessageBuilderFunction(),
                                   this.getHashProcessor(),
                                   exceptionTranslator,
-                                  this.logger);
+                                  this.logger,
+                                  this.getCollectionFilter());
     }
 
     /**
      * Ability to add a custom mapping.
-     * @param clazz - class to be mapped to a toString function.
+     *
+     * @param clazz  - class to be mapped to a toString function.
      * @param mapper - toString mapping function for the specified clazz.
-     * @param <T>  - type of generic class
+     * @param <T>    - type of generic class
      * @return logging configuration
      */
-    public <T> LoggingConfigs withOverride(Class<T> clazz, Function<T, String> mapper){
+    public <T> LoggingConfigs withOverride(Class<T> clazz, Function<T, String> mapper) {
         customMapper.put(clazz, (Function<Object, String>) mapper);
 
         return this;
