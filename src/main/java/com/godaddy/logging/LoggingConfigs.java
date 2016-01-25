@@ -1,5 +1,4 @@
 /**
- *
  * Copyright (c) 2015 GoDaddy
  *
  * Permission is hereby granted, free of charge, to any person obtaining a copy
@@ -19,7 +18,6 @@
  * LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
  * OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
  * THE SOFTWARE.
- *
  */
 
 package com.godaddy.logging;
@@ -34,10 +32,10 @@ import com.google.common.collect.Sets;
 import lombok.Builder;
 import lombok.Data;
 import lombok.Getter;
+import lombok.Setter;
 
 import java.util.Collection;
 import java.util.HashMap;
-import java.util.Iterator;
 import java.util.Map;
 import java.util.Set;
 import java.util.UUID;
@@ -50,41 +48,42 @@ import static java.util.stream.Collectors.toList;
 @Data
 public class LoggingConfigs {
 
+    @Setter
     @Getter
     private static LoggingConfigs current = builder().build();
 
     /**
      * The custom mapper provides the ability to pass in a custom toString function for a specific class.
      */
-    private Map<Class<?>, Function<Object, String>> customMapper;
+    private final Map<Class<?>, Function<Object, String>> customMapper;
 
     /**
      * The recursiveLevel defines the number of inner class levels to be logged.
      *
      * Default value is "5".
      */
-    private Integer recursiveLevel;
+    private final Integer recursiveLevel;
 
     /**
      * Methods beginning with one of these defined prefixes will be logged.
      *
      * Default values are "get" and "is".
      */
-    private Set<String> methodPrefixes;
+    private final Set<String> methodPrefixes;
 
     /**
      * Values that contain these prefixes will not be logged.
      *
      * Default values are "val$" and "this$".
      */
-    private Set<String> excludesPrefixes;
+    private final Set<String> excludesPrefixes;
 
     /**
      * Message builder to format logs.
      *
      * It uses the LoggerMessageBuilder by default.
      */
-    private MessageBuilderProvider<?> messageBuilderFunction;
+    private final MessageBuilderProvider<?> messageBuilderFunction;
 
     /**
      * Processor used to hash data.
@@ -93,24 +92,24 @@ public class LoggingConfigs {
      * MD5 is not cryptographically secure, but it is extremely fast.
      * For a more robust encryption you can use your own HashProcessor.
      */
-    private HashProcessor hashProcessor;
+    private final HashProcessor hashProcessor;
 
     /**
      * Function to take any exceptions thrown by the logger and translate it to a string
      */
-    private ExceptionTranslator exceptionTranslator;
+    private final ExceptionTranslator exceptionTranslator;
 
     /**
      * Function which returns a logger implementation. By default, LoggerImpl is used.
      */
-    private BiFunction<Class<?>, LoggingConfigs, Logger> logger;
+    private final BiFunction<Class<?>, LoggingConfigs, Logger> logger;
 
     /**
      * Allows the ability to filter collections, if you only want a maximum of 10 elements to be logged per
      * collection you can do so by providing a filter function that will ensure only 10 elements are logged.
      * By default collections are filtered to only contain 50 items.
      */
-    private Function<Collection, Collection> collectionFilter;
+    private final Function<Collection, Collection> collectionFilter;
 
     LoggingConfigs(
             Map<Class<?>, Function<Object, String>> customMapper,
@@ -147,82 +146,128 @@ public class LoggingConfigs {
         this.recursiveLevel = loggingConfigs.getRecursiveLevel();
         this.messageBuilderFunction = loggingConfigs.getMessageBuilderFunction();
         this.hashProcessor = loggingConfigs.getHashProcessor();
+        this.logger = loggingConfigs.getLogger();
         this.exceptionTranslator = loggingConfigs.getExceptionTranslator();
         this.collectionFilter = loggingConfigs.getCollectionFilter();
     }
 
     /**
      * Creates an Immutable copy of Logging Configs with a newly defined Recursive Level.
+     *
      * @param recursiveLevel how deep do you want the logging to go for each object
      * @return logging configuration
      */
     public LoggingConfigs withRecursiveLevel(Integer recursiveLevel) {
-        this.recursiveLevel = recursiveLevel;
-
-        return this;
+        return new LoggingConfigs(this.getCustomMapper(),
+                                  recursiveLevel,
+                                  this.getMethodPrefixes(),
+                                  this.getExcludesPrefixes(),
+                                  this.getMessageBuilderFunction(),
+                                  this.getHashProcessor(),
+                                  this.getExceptionTranslator(),
+                                  this.logger,
+                                  this.getCollectionFilter());
     }
 
     /**
      * Creates an Immutable copy of Logging Configs with a newly defined Message Builder Function.
+     *
      * @param messageBuilderFunction message builder provider
      * @return logging configuration
      */
     public LoggingConfigs withMessageBuilderFunction(MessageBuilderProvider<?> messageBuilderFunction) {
-        this.messageBuilderFunction = messageBuilderFunction;
-
-        return this;
+        return new LoggingConfigs(this.getCustomMapper(),
+                                  this.getRecursiveLevel(),
+                                  this.getMethodPrefixes(),
+                                  this.getExcludesPrefixes(),
+                                  messageBuilderFunction,
+                                  this.getHashProcessor(),
+                                  this.getExceptionTranslator(),
+                                  this.logger,
+                                  this.getCollectionFilter());
     }
 
     public LoggingConfigs withLogger(BiFunction<Class<?>, LoggingConfigs, Logger> logger) {
-        this.logger = logger;
-
-        return this;
+        return new LoggingConfigs(this.getCustomMapper(),
+                                  this.getRecursiveLevel(),
+                                  this.getMethodPrefixes(),
+                                  this.getExcludesPrefixes(),
+                                  messageBuilderFunction,
+                                  this.getHashProcessor(),
+                                  this.getExceptionTranslator(),
+                                  logger,
+                                  this.getCollectionFilter());
     }
 
     public LoggingConfigs useJson() {
-        this.messageBuilderFunction = new LogstashMessageBuilderProvider();
-
-        this.logger = (clazz, configs) -> new MarkerAppendingLogger(new Slf4WrapperLogger(org.slf4j.LoggerFactory.getLogger(clazz)), configs);
-
-        return this;
+        return new LoggingConfigs(this.getCustomMapper(),
+                                  this.getRecursiveLevel(),
+                                  this.getMethodPrefixes(),
+                                  this.getExcludesPrefixes(),
+                                  new LogstashMessageBuilderProvider(),
+                                  this.getHashProcessor(),
+                                  this.getExceptionTranslator(),
+                                  (clazz, configs) -> new MarkerAppendingLogger(new Slf4WrapperLogger(org.slf4j.LoggerFactory.getLogger(clazz)), configs),
+                                  this.getCollectionFilter());
     }
 
     public LoggingConfigs withCollectionFilter(Function<Collection, Collection> collectionFilter) {
-        this.collectionFilter = collectionFilter;
-
-        return this;
+        return new LoggingConfigs(this.getCustomMapper(),
+                                  this.getRecursiveLevel(),
+                                  this.getMethodPrefixes(),
+                                  this.getExcludesPrefixes(),
+                                  this.getMessageBuilderFunction(),
+                                  this.getHashProcessor(),
+                                  this.getExceptionTranslator(),
+                                  this.logger,
+                                  collectionFilter);
     }
 
     /**
      * Creates an Immutable copy of Logging Configs with a newly defined Hash Processor.
+     *
      * @param hashProcessor hash processor
      * @return logging configuration
      */
     public LoggingConfigs withHashProcessor(HashProcessor hashProcessor) {
-        this.hashProcessor = hashProcessor;
-
-        return this;
+        return new LoggingConfigs(this.getCustomMapper(),
+                                  this.getRecursiveLevel(),
+                                  this.getMethodPrefixes(),
+                                  this.getExcludesPrefixes(),
+                                  this.getMessageBuilderFunction(),
+                                  hashProcessor,
+                                  this.getExceptionTranslator(),
+                                  this.logger,
+                                  this.getCollectionFilter());
     }
 
     /**
      * Creates an Immutable copy of Logging Configs with a newly exception translator
+     *
      * @param exceptionTranslator exception translator
      * @return logging configuration
      */
     public LoggingConfigs withExceptionTranslator(ExceptionTranslator exceptionTranslator) {
-        this.exceptionTranslator = exceptionTranslator;
-
-        return this;
+        return new LoggingConfigs(this.getCustomMapper(),
+                                  this.getRecursiveLevel(),
+                                  this.getMethodPrefixes(),
+                                  this.getExcludesPrefixes(),
+                                  this.getMessageBuilderFunction(),
+                                  this.getHashProcessor(),
+                                  exceptionTranslator,
+                                  this.logger,
+                                  this.getCollectionFilter());
     }
 
     /**
      * Ability to add a custom mapping.
-     * @param clazz - class to be mapped to a toString function.
+     *
+     * @param clazz  - class to be mapped to a toString function.
      * @param mapper - toString mapping function for the specified clazz.
-     * @param <T>  - type of generic class
+     * @param <T>    - type of generic class
      * @return logging configuration
      */
-    public <T> LoggingConfigs withOverride(Class<T> clazz, Function<T, String> mapper){
+    public <T> LoggingConfigs withOverride(Class<T> clazz, Function<T, String> mapper) {
         customMapper.put(clazz, (Function<Object, String>) mapper);
 
         return this;
