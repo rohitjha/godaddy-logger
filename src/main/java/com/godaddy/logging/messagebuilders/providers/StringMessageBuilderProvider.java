@@ -67,7 +67,9 @@ public class StringMessageBuilderProvider extends JsonMessageBuilderProvider {
         }
 
         private void trimLastSeparator() {
-            messageBuilder.delete(messageBuilder.length() - SEPARATOR.length(), messageBuilder.length());
+            if (messageBuilder.length() - SEPARATOR.length() > 0) {
+                messageBuilder.delete(messageBuilder.length() - SEPARATOR.length(), messageBuilder.length());
+            }
         }
 
         private void addLogMessageToFormattedString(Map<String, Object> jsonMap) {
