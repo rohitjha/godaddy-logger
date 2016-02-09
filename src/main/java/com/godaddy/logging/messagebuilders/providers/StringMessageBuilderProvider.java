@@ -34,18 +34,18 @@ public class StringMessageBuilderProvider extends JsonMessageBuilderProvider {
 
     @Override
     public Object formatPayload(final LogContext<List<Map<String, Object>>> runningLogContext) {
-        return new StringMessageFormatter(runningLogContext).getFormattedPayload();
+        return new StringMessageFormatter(getContextMap(runningLogContext)).getFormattedPayload();
     }
 
     private static class StringMessageFormatter {
-        private final LogContext<List<Map<String, Object>>> runningLogContext;
+        private final Map<String, Object> contextMap;
 
         private final StringBuilder messageBuilder = new StringBuilder();
 
         private static final String SEPARATOR = "; ";
 
-        public StringMessageFormatter(final LogContext<List<Map<String, Object>>> runningLogContext){
-            this.runningLogContext = runningLogContext;
+        public StringMessageFormatter(final Map<String, Object> contextMap) {
+            this.contextMap = contextMap;
         }
 
         public Object getFormattedPayload() {
@@ -55,7 +55,7 @@ public class StringMessageBuilderProvider extends JsonMessageBuilderProvider {
             // Leveraging TreeMap so that log data is consistently sorted.
             Map<String, Object> jsonMap = new TreeMap<>();
 
-            jsonMap.putAll(getContextMap(runningLogContext));
+            jsonMap.putAll(contextMap);
 
             addLogMessageToFormattedString(jsonMap);
 
