@@ -37,7 +37,7 @@ public class StringMessageBuilderProvider extends JsonMessageBuilderProvider {
         return new StringMessageFormatter(runningLogContext).getFormattedPayload();
     }
 
-    class StringMessageFormatter {
+    private static class StringMessageFormatter {
         private final LogContext<List<Map<String, Object>>> runningLogContext;
 
         private final StringBuilder messageBuilder = new StringBuilder();
