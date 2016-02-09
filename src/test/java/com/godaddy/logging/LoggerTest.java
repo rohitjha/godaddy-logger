@@ -44,11 +44,13 @@ import java.util.Collection;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 import java.util.UUID;
 import java.util.function.Function;
 import java.util.stream.IntStream;
 
 import static java.util.stream.Collectors.toList;
+import static java.util.stream.Collectors.toSet;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertTrue;
 import static org.mockito.Mockito.atLeastOnce;
@@ -263,6 +265,29 @@ public class LoggerTest {
     }
 
     @Test
+    public void test_paralallel_logger() {
+        int logNum = 1000;
+
+        IntStream.range(0, logNum)
+                 .parallel()
+                 .forEach(i -> {
+                     logger.with("data", i)
+                           .info("test" + i);
+                 });
+
+
+        final List<LoggingEvent> loggingEvents = getLoggingEvents();
+
+        loggingEvents.sort((a, b) -> a.getMessage().compareTo(b.getMessage()));
+
+        final Set<String> collect = loggingEvents.stream().map(i -> i.getFormattedMessage()).collect(toSet());
+
+        for (int i = 0; i < logNum; i++) {
+            assertTrue(collect.contains(String.format("test%s; data=%s", String.valueOf(i), String.valueOf(i))));
+        }
+    }
+
+    @Test
     public void closed_logger() {
         Logger with = logger.with("capture", "data");
 
@@ -311,7 +336,7 @@ public class LoggerTest {
     }
 
     @Test
-    public void test_cannot_override_log_message_type(){
+    public void test_cannot_override_log_message_type() {
         Logger customLogger = LoggerFactory.getLogger(LoggerTest.class,
                                                       LoggingConfigs.builder().customMapper(new HashMap<Class<?>, Function<Object, String>>() {{
                                                           put(Map.class, Object::toString);
@@ -432,7 +457,7 @@ public class LoggerTest {
 
     @Test
     public void test_log_array() {
-        int[] array = new int[]{1,2,3};
+        int[] array = new int[]{ 1, 2, 3 };
 
         logger.with("array", array).info("Logging Array");
 
@@ -444,9 +469,9 @@ public class LoggerTest {
         Logger customLogger = LoggerFactory.getLogger(LoggerTest.class,
                                                       LoggingConfigs.builder().messageBuilderFunction(new StringMessageBuilderProvider()).build().withCollectionFilter(
                                                               collection -> (Collection) collection.stream().limit(1).collect(toList())
-                                                              ));
+                                                      ));
 
-        List<Integer> nums = Lists.newArrayList(1,2);
+        List<Integer> nums = Lists.newArrayList(1, 2);
 
         logger.with("nonFilteredList", nums).info("nonFilteredList");
 
