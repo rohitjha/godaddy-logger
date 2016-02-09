@@ -67,8 +67,10 @@ public class StringMessageBuilderProvider extends JsonMessageBuilderProvider {
         }
 
         private void trimLastSeparator() {
-            if (messageBuilder.length() - SEPARATOR.length() > 0) {
-                messageBuilder.delete(messageBuilder.length() - SEPARATOR.length(), messageBuilder.length());
+            final int startOfSeparaterIndex = messageBuilder.length() - SEPARATOR.length();
+
+            if (startOfSeparaterIndex > 0) {
+                messageBuilder.delete(startOfSeparaterIndex, messageBuilder.length());
             }
         }
 
