@@ -265,7 +265,7 @@ public class LoggerTest {
     }
 
     @Test
-    public void test_paralallel_logger() {
+    public void test_parallel_logger() {
         int logNum = 1000;
 
         IntStream.range(0, logNum)
