@@ -32,68 +32,84 @@ import java.util.TreeMap;
 
 public class StringMessageBuilderProvider extends JsonMessageBuilderProvider {
 
-    private StringBuilder messageBuilder = new StringBuilder();
-
-    private static final String SEPARATOR = "; ";
-
-    @Override public Object formatPayload(final LogContext<List<Map<String, Object>>> runningLogContext) {
-        // Clear out the message builder.
-        messageBuilder.setLength(0);
-
-        // Leveraging TreeMap so that log data is consistently sorted.
-        Map<String, Object> jsonMap = new TreeMap<>();
-
-        jsonMap.putAll(getContextMap(runningLogContext));
-
-        addLogMessageToFormattedString(jsonMap);
-
-        buildFormattedContext(0, jsonMap, "");
-
-        trimLastSeparator();
-
-        return messageBuilder.toString();
-
+    @Override
+    public Object formatPayload(final LogContext<List<Map<String, Object>>> runningLogContext) {
+        return new StringMessageFormatter(getContextMap(runningLogContext)).getFormattedPayload();
     }
 
-    private void trimLastSeparator() {
-        messageBuilder.delete(messageBuilder.length() - SEPARATOR.length(), messageBuilder.length());
-    }
+    private static class StringMessageFormatter {
+        private final Map<String, Object> contextMap;
 
-    private void addLogMessageToFormattedString(Map<String, Object> jsonMap) {
-        if(jsonMap.containsKey(CommonKeys.LOG_MESSAGE_KEY)) {
-            messageBuilder.append(jsonMap.get(CommonKeys.LOG_MESSAGE_KEY) + SEPARATOR);
+        private final StringBuilder messageBuilder = new StringBuilder();
+
+        private static final String SEPARATOR = "; ";
+
+        public StringMessageFormatter(final Map<String, Object> contextMap) {
+            this.contextMap = contextMap;
         }
 
-        if(jsonMap.containsKey(CommonKeys.UNNAMED_VALUES_KEY)) {
-            List<Object> context = (List<Object>) jsonMap.get(CommonKeys.UNNAMED_VALUES_KEY);
-            for(Object ctx : context) {
-                messageBuilder.append(ctx).append(SEPARATOR);
+        public Object getFormattedPayload() {
+            // Clear out the message builder.
+            messageBuilder.setLength(0);
+
+            // Leveraging TreeMap so that log data is consistently sorted.
+            Map<String, Object> jsonMap = new TreeMap<>();
+
+            jsonMap.putAll(contextMap);
+
+            addLogMessageToFormattedString(jsonMap);
+
+            buildFormattedContext(0, jsonMap, "");
+
+            trimLastSeparator();
+
+            return messageBuilder.toString();
+        }
+
+        private void trimLastSeparator() {
+            final int startOfSeparatorIndex = messageBuilder.length() - SEPARATOR.length();
+
+            if (startOfSeparatorIndex > 0) {
+                messageBuilder.delete(startOfSeparatorIndex, messageBuilder.length());
             }
         }
-    }
 
-    private void buildFormattedContext(int currentLevel, Map<String, Object> jsonMap, String prefix) {
-        for (String key : jsonMap.keySet()) {
-            if (jsonMap.get(key) instanceof HashMap) {
-                String recursivePrefix = prefix.equals("") ? key + "." : prefix + key + ".";
-                buildFormattedContext(currentLevel + 1, (Map<String, Object>) jsonMap.get(key), recursivePrefix);
+        private void addLogMessageToFormattedString(Map<String, Object> jsonMap) {
+            if (jsonMap.containsKey(CommonKeys.LOG_MESSAGE_KEY)) {
+                messageBuilder.append(jsonMap.get(CommonKeys.LOG_MESSAGE_KEY) + SEPARATOR);
             }
-            else if(!prefix.isEmpty() || (!key.equals(CommonKeys.LOG_MESSAGE_KEY) && !key.equals(CommonKeys.UNNAMED_VALUES_KEY))) {
-                messageBuilder.append(prefix).append(key).append("=");
 
-                Object value = jsonMap.get(key);
+            if (jsonMap.containsKey(CommonKeys.UNNAMED_VALUES_KEY)) {
+                List<Object> context = (List<Object>) jsonMap.get(CommonKeys.UNNAMED_VALUES_KEY);
+                for (Object ctx : context) {
+                    messageBuilder.append(ctx).append(SEPARATOR);
+                }
+            }
+        }
 
-                if(value == null) {
-                    messageBuilder.append("<null>");
+        private void buildFormattedContext(int currentLevel, Map<String, Object> jsonMap, String prefix) {
+            for (String key : jsonMap.keySet()) {
+                if (jsonMap.get(key) instanceof HashMap) {
+                    String recursivePrefix = prefix.equals("") ? key + "." : prefix + key + ".";
+                    buildFormattedContext(currentLevel + 1, (Map<String, Object>) jsonMap.get(key), recursivePrefix);
                 }
-                else if(value instanceof String) {
-                    messageBuilder.append("\"" + value + "\"");
-                }
-                else {
-                    messageBuilder.append(value);
-                }
+                else if (!prefix.isEmpty() || (!key.equals(CommonKeys.LOG_MESSAGE_KEY) && !key.equals(CommonKeys.UNNAMED_VALUES_KEY))) {
+                    messageBuilder.append(prefix).append(key).append("=");
 
-                messageBuilder.append(SEPARATOR);
+                    Object value = jsonMap.get(key);
+
+                    if (value == null) {
+                        messageBuilder.append("<null>");
+                    }
+                    else if (value instanceof String) {
+                        messageBuilder.append("\"" + value + "\"");
+                    }
+                    else {
+                        messageBuilder.append(value);
+                    }
+
+                    messageBuilder.append(SEPARATOR);
+                }
             }
         }
     }
