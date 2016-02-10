@@ -120,6 +120,7 @@ public class LogstashTests {
         Map<String, Object> json = getJson();
 
         assertEquals(json.get(CommonKeys.UNNAMED_VALUES_KEY), Lists.newArrayList(uuid.toString()));
+        assertEquals(json.get("customMessage"), "test");
     }
 
     @Test
@@ -138,6 +139,8 @@ public class LogstashTests {
                                    "  }\n" +
                                    "}");
 
+        Map<String, Object> json = getJson();
+        assertEquals(json.get("customMessage"), "Cycles");
     }
 
     @Test
@@ -153,6 +156,9 @@ public class LogstashTests {
                                    "  \"uuid\" : \"" + uuid + "\",\n" +
                                    "  \"foo\" : \"bar\"\n" +
                                    "}");
+
+        Map<String, Object> json = getJson();
+        assertEquals(json.get("customMessage"), "test");
     }
 
     @Test
@@ -172,6 +178,9 @@ public class LogstashTests {
         assertEquals(getMarkers(), "{\n" +
                                    "  \"_unnamed_values\" : [ \"My car is a 2015 Porsche 911. It cost me $70000.0. I bought it in GERMANY. It has a V12 Engine.\" ]\n" +
                                    "}");
+
+        Map<String, Object> json = getJson();
+        assertEquals(json.get("customMessage"), "TEST");
     }
 
     @Test
@@ -187,6 +196,9 @@ public class LogstashTests {
                                    "  \"key\" : \"value\",\n" +
                                    "  \"otherKey\" : \"otherValue\"\n" +
                                    "}");
+
+        Map<String, Object> json = getJson();
+        assertEquals(json.get("customMessage"), "test");
     }
 
     @Test
@@ -204,6 +216,9 @@ public class LogstashTests {
                                    "    }\n" +
                                    "  }\n" +
                                    "}");
+
+        Map<String, Object> json = getJson();
+        assertEquals(json.get("customMessage"), "test");
     }
 
     @Test
@@ -261,6 +276,9 @@ public class LogstashTests {
         logger.with(person).info("TEST");
 
         assertEquals(getMarkers(), expected);
+
+        Map<String, Object> json = getJson();
+        assertEquals(json.get("customMessage"), "TEST");
     }
 
     @Test
@@ -276,6 +294,9 @@ public class LogstashTests {
         assertEquals(getMarkers(), "{\n" +
                                    "  \"bar\" : 3\n" +
                                    "}");
+
+        Map<String, Object> json = getJson();
+        assertEquals(json.get("customMessage"), "Test");
     }
 
     @Test
@@ -285,6 +306,9 @@ public class LogstashTests {
         assertEquals(getMarkers(), "{\n" +
                                    "  \"EmptyObject\" : { }\n" +
                                    "}");
+
+        Map<String, Object> json = getJson();
+        assertEquals(json.get("customMessage"), "TEST");
     }
 
     @Test
@@ -294,6 +318,9 @@ public class LogstashTests {
         assertEquals(getMarkers(), "{\n" +
                                    "  \"_unnamed_values\" : [ 123 ]\n" +
                                    "}");
+
+        Map<String, Object> json = getJson();
+        assertEquals(json.get("customMessage"), "TEST");
     }
 
     @Test
@@ -303,6 +330,9 @@ public class LogstashTests {
         assertEquals(getMarkers(), "{\n" +
                                    "  \"_unnamed_values\" : [ \"String Test\" ]\n" +
                                    "}");
+
+        Map<String, Object> json = getJson();
+        assertEquals(json.get("customMessage"), "TEST");
     }
 
     @Test
@@ -315,6 +345,9 @@ public class LogstashTests {
                                    "  \"two\" : \"data2\",\n" +
                                    "  \"one\" : \"data1\"\n" +
                                    "}");
+
+        Map<String, Object> json = getJson();
+        assertEquals(json.get("customMessage"), "test");
     }
 
     @Test
@@ -324,6 +357,9 @@ public class LogstashTests {
         assertEquals(getMarkers(), "{\n" +
                                    "  \"_unnamed_values\" : [ \"HI\" ]\n" +
                                    "}");
+
+        Map<String, Object> json = getJson();
+        assertEquals(json.get("customMessage"), "foo 1 2");
     }
 
     @Test
@@ -331,6 +367,9 @@ public class LogstashTests {
         logger.with(null).info("TEST");
 
         assertEquals(getMarkers(), "{ }");
+
+        Map<String, Object> json = getJson();
+        assertEquals(json.get("customMessage"), "TEST");
     }
 
     @Test
@@ -342,6 +381,9 @@ public class LogstashTests {
                                    "    \"text\" : \"<An error occurred logging!>\"\n" +
                                    "  }\n" +
                                    "}");
+
+        Map<String, Object> json = getJson();
+        assertEquals(json.get("customMessage"), "test");
     }
 
     @Test
@@ -370,6 +412,9 @@ public class LogstashTests {
                           "}";
 
         assertEquals(getMarkers(), expected);
+
+        Map<String, Object> json = getJson();
+        assertEquals(json.get("customMessage"), "TEST");
     }
 
     @Test
@@ -391,6 +436,9 @@ public class LogstashTests {
                           "}";
 
         assertEquals(getMarkers(), expected);
+
+        Map<String, Object> json = getJson();
+        assertEquals(json.get("customMessage"), "TEST");
     }
 
     @Test
@@ -403,6 +451,9 @@ public class LogstashTests {
                           "}";
 
         assertEquals(getMarkers(), expected);
+
+        Map<String, Object> json = getJson();
+        assertEquals(json.get("customMessage"), "TEST");
     }
 
     @Test
@@ -416,6 +467,9 @@ public class LogstashTests {
                           "}";
 
         assertEquals(getMarkers(), expected);
+
+        Map<String, Object> json = getJson();
+        assertEquals(json.get("customMessage"), "TEST");
     }
 
     @Test
@@ -450,6 +504,9 @@ public class LogstashTests {
                                    "    }\n" +
                                    "  } ]\n" +
                                    "}");
+
+        Map<String, Object> json = getJson();
+        assertEquals(json.get("customMessage"), "Testing");
     }
 
     private Map<String, Object> getJson() throws IOException {
