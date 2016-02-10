@@ -274,7 +274,8 @@ public class LoggingConfigs {
     }
 
     /**
-     * Deprecated, use addOverride instead.
+     * This is deprecated because we don't want any of the with functionality mutating the LoggingConfigs.
+     * Use addOverride instead.
      */
     @Deprecated
     public <T> LoggingConfigs withOverride(Class<T> clazz, Function<T, String> mapper) {
