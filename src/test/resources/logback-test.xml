@@ -54,7 +54,7 @@
         </encoder>
     </appender>
     <appender name="listAppender" class="ch.qos.logback.core.read.ListAppender"/>
-    <logger name="com.godaddy.logging.logstash.LogstashTest" level="DEBUG">
+    <logger name="com.godaddy.logging.logstash.LogstashTests" level="DEBUG">
         <appender-ref ref="loggingEventCompositeJsonEncoderAppender" />
         <appender-ref ref="listAppender" />
     </logger>

@@ -57,7 +57,7 @@ import static org.mockito.Mockito.atLeastOnce;
 import static org.mockito.Mockito.verify;
 
 @RunWith(MockitoJUnitRunner.class)
-public class LoggerTest {
+public class LoggerTests {
     private Logger logger;
 
     @Mock
@@ -75,7 +75,7 @@ public class LoggerTest {
 
         LoggingConfigs loggingConfigs = LoggingConfigs.builder().messageBuilderFunction(new StringMessageBuilderProvider()).build();
 
-        logger = LoggerFactory.getLogger(LoggerTest.class, loggingConfigs);
+        logger = LoggerFactory.getLogger(LoggerTests.class, loggingConfigs);
 
     }
 
@@ -145,7 +145,7 @@ public class LoggerTest {
 
     @Test
     public void test_custom_mapper() {
-        Logger customLogger = LoggerFactory.getLogger(LoggerTest.class,
+        Logger customLogger = LoggerFactory.getLogger(LoggerTests.class,
                                                       LoggingConfigs.builder().customMapper(new HashMap<Class<?>, Function<Object, String>>() {{
                                                           put(Car.class, Object::toString);
                                                       }}).build());
@@ -161,7 +161,7 @@ public class LoggerTest {
 
     @Test
     public void test_custom_global_mapper() throws URISyntaxException {
-        Logger customLogger = LoggerFactory.getLogger(LoggerTest.class);
+        Logger customLogger = LoggerFactory.getLogger(LoggerTests.class);
 
         LoggingConfigs.getCurrent().withOverride(URI.class, URI::toString);
 
@@ -337,7 +337,7 @@ public class LoggerTest {
 
     @Test
     public void test_cannot_override_log_message_type() {
-        Logger customLogger = LoggerFactory.getLogger(LoggerTest.class,
+        Logger customLogger = LoggerFactory.getLogger(LoggerTests.class,
                                                       LoggingConfigs.builder().customMapper(new HashMap<Class<?>, Function<Object, String>>() {{
                                                           put(Map.class, Object::toString);
                                                       }}).build());
@@ -349,7 +349,7 @@ public class LoggerTest {
 
     @Test
     public void test_custom_exception_mapper() {
-        Logger customLogger = LoggerFactory.getLogger(LoggerTest.class,
+        Logger customLogger = LoggerFactory.getLogger(LoggerTests.class,
                                                       LoggingConfigs.builder().build().withExceptionTranslator(i -> "<<err>>"));
 
         customLogger.with(new GetterThrowsError()).info("test");
@@ -412,7 +412,7 @@ public class LoggerTest {
 
     @Test
     public void test_custom_mapping_inheritance() {
-        Logger customLogger = LoggerFactory.getLogger(LoggerTest.class,
+        Logger customLogger = LoggerFactory.getLogger(LoggerTests.class,
                                                       LoggingConfigs.builder().build().withOverride(CustomMapping.class, CustomMapping::testString));
 
 
@@ -442,7 +442,7 @@ public class LoggerTest {
 
         logger.with(annotatedObject).info("Annotation Logging");
 
-        String expected = "Annotation Logging; AnnotatedObject.creditCardNumber=\"5d4e923fe014cb34f4c7ed17b82d6c58\"; AnnotatedObject.notAnnotated=\"NOT ANNOTATED\"; " +
+        String expected = "Annotation Logging; AnnotatedObject.creditCardNumber=\"6ab9d060085b642a04b94865edfaafb05c76d647f067feb805a394cc19c701a1\"; AnnotatedObject.notAnnotated=\"NOT ANNOTATED\"; " +
                           "AnnotatedObject.notAnnotatedMethod=\"Not Annotated\"";
 
         assertEquals(getLoggingEvent().getFormattedMessage(), expected);
@@ -466,7 +466,7 @@ public class LoggerTest {
 
     @Test
     public void test_collection_filter() {
-        Logger customLogger = LoggerFactory.getLogger(LoggerTest.class,
+        Logger customLogger = LoggerFactory.getLogger(LoggerTests.class,
                                                       LoggingConfigs.builder().messageBuilderFunction(new StringMessageBuilderProvider()).build().withCollectionFilter(
                                                               collection -> (Collection) collection.stream().limit(1).collect(toList())
                                                       ));

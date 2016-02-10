@@ -30,7 +30,7 @@ import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.io.ObjectOutputStream;
 
-public class MD5HashProcessor implements HashProcessor {
+public class Sha256HashProcessor implements HashProcessor {
 
     @Override public String process(final Object object) {
         ByteArrayOutputStream binaryStream = new ByteArrayOutputStream();
@@ -43,7 +43,7 @@ public class MD5HashProcessor implements HashProcessor {
             return "<Error Hashing>";
         }
 
-        return Hashing.md5().hashBytes(binaryStream.toByteArray()).toString();
+        return Hashing.sha256().hashBytes(binaryStream.toByteArray()).toString();
     }
 
 }

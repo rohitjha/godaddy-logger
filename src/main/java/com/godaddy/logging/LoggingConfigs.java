@@ -134,7 +134,7 @@ public class LoggingConfigs {
                                      : logger;
 
         this.messageBuilderFunction = messageBuilderFunction != null ? messageBuilderFunction : new StringMessageBuilderProvider();
-        this.hashProcessor = hashProcessor == null ? new MD5HashProcessor() : hashProcessor;
+        this.hashProcessor = hashProcessor == null ? new Sha256HashProcessor() : hashProcessor;
         this.exceptionTranslator = exceptionTranslator == null ? i -> "<An error occurred logging!>" : exceptionTranslator;
         this.collectionFilter = collectionFilter == null ? collection -> (Collection) collection.stream().limit(50).collect(toList()) : collectionFilter;
     }
@@ -267,6 +267,17 @@ public class LoggingConfigs {
      * @param <T>    - type of generic class
      * @return logging configuration
      */
+    public <T> LoggingConfigs addOverride(Class<T> clazz, Function<T, String> mapper) {
+        customMapper.put(clazz, (Function<Object, String>) mapper);
+
+        return this;
+    }
+
+    /**
+     * This is deprecated because we don't want any of the with functionality mutating the LoggingConfigs.
+     * Use addOverride instead.
+     */
+    @Deprecated
     public <T> LoggingConfigs withOverride(Class<T> clazz, Function<T, String> mapper) {
         customMapper.put(clazz, (Function<Object, String>) mapper);
 
