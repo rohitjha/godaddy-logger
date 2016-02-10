@@ -22,6 +22,7 @@
 
 package com.godaddy.logging.messagebuilders.providers;
 
+import com.godaddy.logging.CommonKeys;
 import com.godaddy.logging.LogContext;
 import org.slf4j.Marker;
 
@@ -34,7 +35,11 @@ import static net.logstash.logback.marker.Markers.appendEntries;
 public class LogstashMessageBuilderProvider extends JsonMessageBuilderProvider {
 
     @Override public Marker formatPayload(final LogContext<List<Map<String, Object>>> context) {
-        return appendEntries(getContextMap(context));
+        final Map<String, Object> contextMap = getContextMap(context);
+        // Removing the _message key so that the log message does not appear twice.
+        contextMap.remove(CommonKeys.LOG_MESSAGE_KEY);
+
+        return appendEntries(contextMap);
     }
 
 }
