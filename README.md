@@ -1,5 +1,7 @@
 # GoDaddy Logger
 
+[![Build Status](https://travis-ci.org/godaddy/godaddy-logger.svg?branch=master)](https://travis-ci.org/godaddy/godaddy-logger)
+
 The GoDaddy Logger is a wrapping of the [SLF4J Logger](http://www.slf4j.org/manual.html), which includes various features built on top of the SLF4J Logger to allow for a better and easier logging experience.
 
 Instead of worrying about formatting your logs, the GoDaddy Logger will handle the formatting of your logs for you in a clean efficient way, with the use of [reflectasm](https://github.com/EsotericSoftware/reflectasm). An example of how this works can be seen with the added `with` functionality:
