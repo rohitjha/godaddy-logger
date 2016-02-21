@@ -38,6 +38,8 @@ import org.mockito.Mock;
 import org.mockito.runners.MockitoJUnitRunner;
 import org.slf4j.MarkerFactory;
 
+import java.io.IOException;
+import java.lang.reflect.Constructor;
 import java.net.URI;
 import java.net.URISyntaxException;
 import java.util.Collection;
@@ -480,6 +482,35 @@ public class LoggerTests {
         customLogger.with("filteredList", nums).info("filteredList");
 
         assertEquals(getLoggingEvent().getFormattedMessage(), "filteredList; filteredList=[1]");
+    }
+
+    @Test
+    public void test_list_cycles() throws IOException, NoSuchMethodException {
+        final CycleObject cycleObject = new CycleObject();
+
+        final Constructor<? extends CycleObject> constructor = cycleObject.getClass().getConstructor();
+
+        logger.with(constructor).info("test");
+    }
+
+    @Test
+    public void test_list_recursive_level_used() {
+        Logger logger = LoggerFactory.getLogger(LoggerTests.class, LoggingConfigs.builder().recursiveLevel(3).build());
+
+        Object listTest = new Object() {
+            String foo = "foo";
+            List<Object> objects = Lists.newArrayList(new Object() {
+                String bar = "bar";
+                List<Object> skippedObjects = Lists.newArrayList(new Object() {
+                   String skipper = "true";
+                });
+            });
+        };
+
+        logger.with(listTest).info("test");
+
+        assertEquals(getLoggingEvent().getFormattedMessage(), "test; foo=\"foo\"; objects=[bar, []]");
+
     }
 
     private LoggingEvent getLoggingEvent() {

@@ -73,7 +73,7 @@ public class StringMessageBuilder extends LoggerMessageBuilder<String> {
         }
 
         try {
-            buildMessage(currentObject, new ArrayList<>(), "", 0);
+            buildMessage(currentObject, new ArrayList<>(), "");
 
             trimLastSeparator();
         }

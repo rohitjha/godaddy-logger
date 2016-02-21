@@ -40,16 +40,22 @@ public abstract class LoggerMessageBuilder<T> implements MessageBuilder<T> {
 
     protected LoggingConfigs configs;
 
+    protected Integer currentRecursiveLevel = 0;
 
     public LoggerMessageBuilder(LoggingConfigs configs) {
         this.configs = configs;
     }
 
+    public LoggerMessageBuilder(LoggingConfigs configs, Integer currentRecursiveLevel) {
+        this.configs = configs;
+        this.currentRecursiveLevel = currentRecursiveLevel;
+    }
+
     @Override
     public abstract RunningLogContext<T> buildMessage(final LogContext<T> previous, final Object currentObject);
 
-    protected void buildMessage(Object obj, List<String> path, String currentField, int recursiveLevel) {
-        if (recursiveLevel > configs.getRecursiveLevel()) {
+    protected void buildMessage(Object obj, List<String> path, String currentField) {
+        if (currentRecursiveLevel > configs.getRecursiveLevel()) {
             return;
         }
 
@@ -89,7 +95,7 @@ public abstract class LoggerMessageBuilder<T> implements MessageBuilder<T> {
             processEnum(currentField, obj);
         }
         else {
-            processObject(obj, path, currentField, recursiveLevel);
+            processObject(obj, path, currentField);
         }
     }
 
@@ -109,14 +115,16 @@ public abstract class LoggerMessageBuilder<T> implements MessageBuilder<T> {
 
     protected abstract void processEnum(String currentField, Object obj);
 
-    protected boolean processObject(Object obj, List<String> path, String currentField, Integer recursiveLevel) {
+    protected boolean processObject(Object obj, List<String> path, String currentField) {
         if (cyclesDetected(obj)) {
             return false;
         }
 
         markObjectAsProcessed(obj);
 
-        recurseThroughObject(obj, path, currentField, recursiveLevel + 1);
+        currentRecursiveLevel++;
+
+        recurseThroughObject(obj, path, currentField);
 
         return true;
     }
@@ -196,7 +204,7 @@ public abstract class LoggerMessageBuilder<T> implements MessageBuilder<T> {
      * @param recursiveLevel - Current level in recursion. maximum amount of recursion levels is defined by
      *                       RECURSIVE_LEVEL.
      */
-    private void recurseThroughObject(Object obj, List<String> path, String currentField, int recursiveLevel) {
+    private void recurseThroughObject(Object obj, List<String> path, String currentField) {
 
         MethodAccess methodAccess = MethodAccess.get(obj.getClass());
 
@@ -220,8 +228,7 @@ public abstract class LoggerMessageBuilder<T> implements MessageBuilder<T> {
 
                 try {
                     buildMessage(getLogMessage(logCache, logResult), recursivePath,
-                                 formatMethod(recursivePath, methodAccess.getMethodNames()[logCache.getIndex()]),
-                                 recursiveLevel);
+                                 formatMethod(recursivePath, methodAccess.getMethodNames()[logCache.getIndex()]));
                 }
                 catch (Throwable t) {
                     // result is ignored, but can be captured for debugging since we've already tried to catch
@@ -248,16 +255,14 @@ public abstract class LoggerMessageBuilder<T> implements MessageBuilder<T> {
 
                 if (!configs.getExcludesPrefixes().stream().anyMatch(fieldName::startsWith)) {
                     buildMessage(getLogMessage(logCache, fieldAccess.get(obj, logCache.getIndex())), recursivePath,
-                                 formatField(currentField, fieldName),
-                                 recursiveLevel);
+                                 formatField(currentField, fieldName));
                 }
             }
             catch (Throwable t) {
                 String fieldError = configs.getExceptionTranslator().translate(t);
 
                 buildMessage(getLogMessage(logCache, fieldError), path,
-                             formatField(currentField, fieldName),
-                             recursiveLevel);
+                             formatField(currentField, fieldName));
             }
         }
 

@@ -45,8 +45,14 @@ public class JsonMessageBuilder extends LoggerMessageBuilder<List<Map<String, Ob
 
     private final Stack<Map<String, Object>> messageBuilderStack = new Stack<>();
 
+
     public JsonMessageBuilder(final LoggingConfigs configs) {
         super(configs);
+        messageBuilderStack.push(new HashMap<>());
+    }
+
+    public JsonMessageBuilder(final LoggingConfigs configs, final Integer currentRecursiveLevel) {
+        super(configs, currentRecursiveLevel);
         messageBuilderStack.push(new HashMap<>());
     }
 
@@ -60,7 +66,7 @@ public class JsonMessageBuilder extends LoggerMessageBuilder<List<Map<String, Ob
             return JsonContextUtils.initialToRunning(previous);
         }
 
-        buildMessage(currentObject, new ArrayList<>(), key, 0);
+        buildMessage(currentObject, new ArrayList<>(), key);
 
         RunningLogContext<List<Map<String, Object>>> nextContext = JsonContextUtils.initialToRunning(previous);
 
@@ -142,9 +148,16 @@ public class JsonMessageBuilder extends LoggerMessageBuilder<List<Map<String, Ob
     private void filterAndProcessCollection(String currentField, Collection collection) {
         collection = configs.getCollectionFilter().apply(collection);
 
+        if(collection.size() == 0) {
+            messageBuilderStack.peek().put(currentField, collection);
+            return;
+        }
+
+        currentRecursiveLevel++;
+
         List<Object> items = Arrays.stream(collection.toArray())
                                    .flatMap(i -> {
-                                       JsonMessageBuilder jsonMessageBuilder = new JsonMessageBuilder(configs);
+                                       JsonMessageBuilder jsonMessageBuilder = new JsonMessageBuilder(configs, currentRecursiveLevel);
 
                                        List<Map<String, Object>> data = jsonMessageBuilder.buildMessage(null, i).getData();
 
@@ -182,10 +195,10 @@ public class JsonMessageBuilder extends LoggerMessageBuilder<List<Map<String, Ob
         messageBuilderStack.peek().put(currentField, obj);
     }
 
-    @Override protected boolean processObject(Object obj, List<String> path, String currentField, Integer recursiveLevel) {
+    @Override protected boolean processObject(Object obj, List<String> path, String currentField) {
         messageBuilderStack.push(new HashMap<>());
 
-        if (super.processObject(obj, path, currentField, recursiveLevel)) {
+        if (super.processObject(obj, path, currentField)) {
             final Map<String, Object> pop = messageBuilderStack.pop();
 
             if (Strings.isNullOrEmpty(currentField)) {
