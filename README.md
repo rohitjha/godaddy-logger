@@ -20,13 +20,8 @@ Notice the use of the with functionality: logger.**with(car)**.info("Logging Car
 ## What's included in this library?
 
  - [org.slf4j.slf4j-api](http://www.slf4j.org/) - 1.7.10
- - [org.projectlombok.lombok](https://projectlombok.org/) - 1.16.2
  - [com.google.guava.guava](https://code.google.com/p/guava-libraries/) - 18.0
  - [com.esotericsoftware.reflectasm](https://github.com/EsotericSoftware/reflectasm) - 1.10.0
- - Test scoped dependencies:
-	 - [ch.qos.logback.logback-classic](http://logback.qos.ch/) - 1.0.13
-	 - [org.mockito.mockito-all](http://mockito.org/) - 1.10.19
-	 - [junit.junit](http://junit.org/) - 4.12
 
 ## How To Use
 If you are using maven simply add the following dependency to your project:
