@@ -1,6 +1,7 @@
 # GoDaddy Logger
 
 [![Build Status](https://travis-ci.org/godaddy/godaddy-logger.svg?branch=master)](https://travis-ci.org/godaddy/godaddy-logger)
+[![latest version](https://img.shields.io/maven-central/v/com.godaddy/logging.svg)](http://search.maven.org/#search%7Cgav%7C1%7Cg%3A%22com.godaddy%22%20AND%20a%3A%22logging%22)
 
 The GoDaddy Logger is a wrapping of the [SLF4J Logger](http://www.slf4j.org/manual.html), which includes various features built on top of the SLF4J Logger to allow for a better and easier logging experience.
 
@@ -20,21 +21,24 @@ Notice the use of the with functionality: logger.**with(car)**.info("Logging Car
 ## What's included in this library?
 
  - [org.slf4j.slf4j-api](http://www.slf4j.org/) - 1.7.10
- - [org.projectlombok.lombok](https://projectlombok.org/) - 1.16.2
  - [com.google.guava.guava](https://code.google.com/p/guava-libraries/) - 18.0
  - [com.esotericsoftware.reflectasm](https://github.com/EsotericSoftware/reflectasm) - 1.10.0
- - Test scoped dependencies:
-	 - [ch.qos.logback.logback-classic](http://logback.qos.ch/) - 1.0.13
-	 - [org.mockito.mockito-all](http://mockito.org/) - 1.10.19
-	 - [junit.junit](http://junit.org/) - 4.12
 
 ## How To Use
-If you are using maven simply add the following dependency to your project:
+If you are using maven first add a `godaddy.logging.version` property to your POM with the current version of the logging library (which is can be found in the shield above, `1.2.1` for example):
+```
+<properties>
+    <godaddy.logging.version>INSERT VERSION HERE</godaddy.logging.version>
+</properties>
+```
+
+Then add the `com.goodaddy.logging` library as a dependency:
+
 ```
 <dependency>
 	<groupId>com.godaddy</groupId>
-	<artifactId>logger</artifactId>
-	<version>1.0-SNAPSHOT</version>
+	<artifactId>logging</artifactId>
+	<version>${godaddy.logging.version}</version>
 </dependency>
 ```
 A basic Logger, with all of the default settings can be created as follows:
