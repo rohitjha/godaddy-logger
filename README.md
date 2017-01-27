@@ -131,11 +131,11 @@ public class AnnotatedObject {
 As you can see the AnnotatedObject has made use of the LoggingScope annotation. The annotatedLogSkip field will be ignore from the logs as it has a defined LoggingScope value of SKIP. The getAnnotatedLogSkipMethod method result will also be ignored from the logs. The getCreditCardNumber method result will be hashed and logged as it's logging scope value was set to HASH.
 
 ```
-AnnotatedObject annotatedObject = new AnnotatedObject();
-annotatedObject.setAnnotatedLogSkip("SKIP ME");
-annotatedObject.setNotAnnotated("NOT ANNOTATED");
+AnnotatedObject annotatedPojo = new AnnotatedObject();
+annotatedPojo.setAnnotatedLogSkip("SKIP ME");
+annotatedPojo.setNotAnnotated("NOT ANNOTATED");
 
-logger.with(annotatedObject).info("Annotation Logging");
+logger.with(annotatedPojo).info("Annotation Logging");
 ```
 
 When the above code block is run, the following will be output in the logs as expected:

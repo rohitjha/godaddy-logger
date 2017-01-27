@@ -437,15 +437,29 @@ public class LoggerTests {
     }
 
     @Test
-    public void test_annotation_logging() {
-        AnnotatedObject annotatedObject = new AnnotatedObject();
+    public void test_pojo_annotation_logging() {
+        AnnotatedPojo annotatedPojo = new AnnotatedPojo();
 
-        logger.with(annotatedObject).info("Annotation Logging");
+        logger.with(annotatedPojo).info("Annotation Logging");
 
-        String expectedLogMessage = "Annotation Logging; AnnotatedObject.hashAnnotationField=\"574ddfe7cc3cdd67bb290ca50e964e5904613bd373a5fd1924e27f8552aae310\"; " +
-                                    "AnnotatedObject.noAnnotationField=\"NoAnnotationField\"; AnnotatedObject" +
-                                    ".hashAnnotationProperty=\"5f7e0a2dff6ec731caf7060a4442f3a553d0efd220cb416eaaf923b2ed0d4472\"; AnnotatedObject" +
+        String expectedLogMessage = "Annotation Logging; AnnotatedPojo.hashAnnotationField=\"574ddfe7cc3cdd67bb290ca50e964e5904613bd373a5fd1924e27f8552aae310\"; " +
+                                    "AnnotatedPojo.noAnnotationField=\"NoAnnotationField\"; AnnotatedPojo" +
+                                    ".hashAnnotationProperty=\"5f7e0a2dff6ec731caf7060a4442f3a553d0efd220cb416eaaf923b2ed0d4472\"; AnnotatedPojo" +
                                     ".noAnnotationProperty=\"NoAnnotationProperty\"";
+
+        String actualLogMessage = getLoggingEvent().getFormattedMessage();
+
+        assertEquals(actualLogMessage, expectedLogMessage);
+    }
+
+    @Test
+    public void test_lombok_annotation_logging() {
+        AnnotatedLombokObject annotatedLombokObject = new AnnotatedLombokObject();
+
+        logger.with(annotatedLombokObject).info("Lombok Logging");
+
+        String expectedLogMessage = "Lombok Logging; AnnotatedLombokObject.hashAnnotationProperty=\"5f7e0a2dff6ec731caf7060a4442f3a553d0efd220cb416eaaf923b2ed0d4472\";" +
+                                    " AnnotatedLombokObject.noAnnotationProperty=\"NoAnnotationProperty\"";
 
         String actualLogMessage = getLoggingEvent().getFormattedMessage();
 

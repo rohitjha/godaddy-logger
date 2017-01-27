@@ -27,7 +27,7 @@ package com.godaddy.logging.models;
 import com.godaddy.logging.LoggingScope;
 import com.godaddy.logging.Scope;
 
-public class AnnotatedObject {
+public class AnnotatedPojo {
 
     public String noAnnotationField = "NoAnnotationField";
 
