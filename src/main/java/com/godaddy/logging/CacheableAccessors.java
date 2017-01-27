@@ -27,8 +27,9 @@ package com.godaddy.logging;
 import com.esotericsoftware.reflectasm.FieldAccess;
 import com.esotericsoftware.reflectasm.MethodAccess;
 
+import java.beans.IntrospectionException;
+import java.beans.Introspector;
 import java.beans.PropertyDescriptor;
-import java.lang.reflect.Field;
 import java.util.Arrays;
 import java.util.concurrent.ConcurrentHashMap;
 
@@ -125,17 +126,17 @@ public class CacheableAccessors {
      * If the method is not a getter for a field, Scope.LOG is returned.
      */
     private static Scope getScopeForMethodField(Class<?> clazz, String methodName) {
-        for(Field field : clazz.getDeclaredFields()) {
-            try {
-                if (methodName.equals(new PropertyDescriptor(field.getName(), clazz).getReadMethod().getName())) {
-                    return getLoggingScope(clazz, field.getName());
+
+        try {
+            for(PropertyDescriptor propertyDescriptor: Introspector.getBeanInfo(clazz).getPropertyDescriptors()) {
+                if (methodName.equals(propertyDescriptor.getReadMethod().getName())) {
+                    return getLoggingScope(clazz, propertyDescriptor.getName());
                 }
             }
-            catch (Exception e) {
-                // throws IntrospectionException if no getter method is found for the field.
-            }
         }
+        catch (IntrospectionException e) {
 
+        }
         return Scope.LOG;
     }
 

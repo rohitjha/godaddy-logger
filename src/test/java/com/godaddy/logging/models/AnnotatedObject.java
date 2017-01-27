@@ -27,27 +27,43 @@ package com.godaddy.logging.models;
 import com.godaddy.logging.LoggingScope;
 import com.godaddy.logging.Scope;
 
-
-import lombok.Data;
-
-@Data
 public class AnnotatedObject {
-    private String notAnnotated;
 
-    @LoggingScope(scope = Scope.SKIP)
-    private String annotatedLogSkip;
+    public String noAnnotationField = "NoAnnotationField";
 
-    public String getNotAnnotatedMethod() {
-        return "Not Annotated";
-    }
+    private final String noAnnotationProperty = "NoAnnotationProperty";
 
-    @LoggingScope(scope = Scope.SKIP)
-    public String getAnnotatedLogSkipMethod() {
-        return "Annotated";
+    public String getNoAnnotationProperty() {
+        return noAnnotationProperty;
     }
 
     @LoggingScope(scope = Scope.HASH)
-    public String getCreditCardNumber() {
-        return "1234-5678-9123-4567";
+    public String hashAnnotationField = "HashAnnotationField";
+
+    @LoggingScope(scope = Scope.HASH)
+    private final String hashAnnotationProperty = "HashAnnotationProperty";
+
+    public String getHashAnnotationProperty() {
+        return hashAnnotationProperty;
+    }
+
+    @LoggingScope(scope = Scope.HASH)
+    public String hashAnnotationMethod() {
+        return "HashAnnotationMethod";
+    }
+
+    @LoggingScope(scope = Scope.SKIP)
+    public String skipAnnotationField = "SkipAnnotationField";
+
+    @LoggingScope(scope = Scope.SKIP)
+    private final String skipAnnotationProperty = "SkipAnnotationProperty";
+
+    public String getSkipAnnotationProperty() {
+        return skipAnnotationProperty;
+    }
+
+    @LoggingScope(scope = Scope.SKIP)
+    public String skipAnnotationMethod() {
+        return "SkipAnnotationMethod";
     }
 }

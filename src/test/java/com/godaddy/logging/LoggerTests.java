@@ -439,15 +439,17 @@ public class LoggerTests {
     @Test
     public void test_annotation_logging() {
         AnnotatedObject annotatedObject = new AnnotatedObject();
-        annotatedObject.setAnnotatedLogSkip("SKIP ME");
-        annotatedObject.setNotAnnotated("NOT ANNOTATED");
 
         logger.with(annotatedObject).info("Annotation Logging");
 
-        String expected = "Annotation Logging; AnnotatedObject.creditCardNumber=\"6ab9d060085b642a04b94865edfaafb05c76d647f067feb805a394cc19c701a1\"; AnnotatedObject.notAnnotated=\"NOT ANNOTATED\"; " +
-                          "AnnotatedObject.notAnnotatedMethod=\"Not Annotated\"";
+        String expectedLogMessage = "Annotation Logging; AnnotatedObject.hashAnnotationField=\"574ddfe7cc3cdd67bb290ca50e964e5904613bd373a5fd1924e27f8552aae310\"; " +
+                                    "AnnotatedObject.noAnnotationField=\"NoAnnotationField\"; AnnotatedObject" +
+                                    ".hashAnnotationProperty=\"5f7e0a2dff6ec731caf7060a4442f3a553d0efd220cb416eaaf923b2ed0d4472\"; AnnotatedObject" +
+                                    ".noAnnotationProperty=\"NoAnnotationProperty\"";
 
-        assertEquals(getLoggingEvent().getFormattedMessage(), expected);
+        String actualLogMessage = getLoggingEvent().getFormattedMessage();
+
+        assertEquals(actualLogMessage, expectedLogMessage);
     }
 
     @Test
