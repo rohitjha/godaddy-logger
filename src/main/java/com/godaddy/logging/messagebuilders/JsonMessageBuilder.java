@@ -175,6 +175,10 @@ public class JsonMessageBuilder extends LoggerMessageBuilder<List<Map<String, Ob
         Collection keySet = configs.getCollectionFilter().apply(map.keySet());
 
         for (Object key : keySet) {
+            if (map.get(key) == null) {
+                builtMap.put(key.toString(), null);
+                continue;
+            }
             List<Map<String, Object>> data = new JsonMessageBuilder(configs).buildMessage(null, map.get(key)).getData();
 
             builtMap.put(key.toString(), process(data));
