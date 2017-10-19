@@ -510,6 +510,13 @@ public class LoggerTests {
     }
 
     @Test
+    public void test_null_map() {
+        Map<String, String> map = new HashMap<>();
+        map.put("key", null);
+        logger.with("myMap", map).info("Some message.");
+    }
+
+    @Test
     public void test_list_recursive_level_used() {
         Logger logger = LoggerFactory.getLogger(LoggerTests.class, LoggingConfigs.builder().recursiveLevel(3).build());
 
