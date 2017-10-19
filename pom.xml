@@ -4,7 +4,7 @@
 
     <groupId>com.godaddy</groupId>
     <artifactId>logging</artifactId>
-    <version>1.2.5-SNAPSHOT</version>
+    <version>1.2.4-SNAPSHOT</version>
     <name>GoDaddy Logging</name>
     <description>Logging Framework to allow for an easy to use and consistent logging experience.</description>
     <url>http://www.godaddy.com</url>
