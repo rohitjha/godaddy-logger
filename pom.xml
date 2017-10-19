@@ -4,7 +4,7 @@
 
     <groupId>com.godaddy</groupId>
     <artifactId>logging</artifactId>
-    <version>1.2.4</version>
+    <version>1.2.5-SNAPSHOT</version>
     <name>GoDaddy Logging</name>
     <description>Logging Framework to allow for an easy to use and consistent logging experience.</description>
     <url>http://www.godaddy.com</url>
@@ -67,7 +67,7 @@
             scm:git:git@github.com:godaddy/godaddy-logger.git
         </developerConnection>
         <url>git@github.com:godaddy/godaddy-logger.git</url>
-      <tag>logging-1.2.4</tag>
+      <tag>HEAD</tag>
   </scm>
 
     <dependencies>
