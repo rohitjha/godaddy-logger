@@ -513,11 +513,9 @@ public class LogstashTests {
         OutputStreamAppender<ILoggingEvent> appender = (OutputStreamAppender<ILoggingEvent>) testLogger.getAppender("loggingEventCompositeJsonEncoderAppender");
         LoggingEventCompositeJsonEncoder encoder = (LoggingEventCompositeJsonEncoder) appender.getEncoder();
 
-        ByteArrayOutputStream outputStream = new ByteArrayOutputStream();
-        encoder.init(outputStream);
-        encoder.doEncode(listAppender.list.get(0));
+        String encodedValue = new String(encoder.encode(listAppender.list.get(0)), "UTF-8");
 
-        return jsonFactory.createParser(outputStream.toString("UTF-8")).readValueAs(new TypeReference<Map<String, Object>>() {});
+        return jsonFactory.createParser(encodedValue).readValueAs(new TypeReference<Map<String, Object>>() {});
     }
 
     private String getMarkers() throws IOException {
